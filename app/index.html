@@ -144,10 +144,10 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
 .velo{ position:fixed; inset:0; background:rgba(28,27,24,.25); z-index:30; display:none; } .velo.open{ display:block; }
 .panel{ position:fixed; right:0; top:0; bottom:0; width:min(460px,100%); background:var(--papel); border-left:1px solid var(--linea); box-shadow:-8px 0 32px rgba(28,27,24,.12); transform:translateX(105%); transition:transform .18s; overflow:auto; z-index:40; }
 .panel.open{ transform:none; }
-.panel .cabp{ padding:14px 16px; border-bottom:1px solid var(--linea); display:flex; justify-content:space-between; align-items:flex-start; gap:8px; position:sticky; top:0; background:var(--papel); z-index:1; }
+.panel .cabp{ padding:calc(14px + env(safe-area-inset-top)) 16px 14px; border-bottom:1px solid var(--linea); display:flex; justify-content:space-between; align-items:flex-start; gap:8px; position:sticky; top:0; background:var(--papel); z-index:1; }
 .panel .cabp h3{ margin:0; font-size:17px; font-weight:600; line-height:1.25; letter-spacing:-.01em; }
 .panel .cabp .ruta{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); margin-bottom:3px; }
-.panel .cuerpo{ padding:14px 16px 40px; display:flex; flex-direction:column; gap:14px; }
+.panel .cuerpo{ padding:14px 16px calc(40px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:14px; }
 .chip{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.06em; padding:2px 7px; border-radius:10px; background:var(--suave); color:var(--gris); }
 .chip.activo{ background:var(--acentoClaro); color:var(--tinta); } .chip.hecho{ background:var(--verdeClaro); } .chip.bloqueado{ color:var(--grisClaro); }
 .acciones{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
@@ -186,7 +186,7 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
 /* ---------- chat Claude ---------- */
 .chat{ position:fixed; right:0; top:0; bottom:0; width:min(520px,100%); background:var(--papel); border-left:1px solid var(--linea); box-shadow:-8px 0 32px rgba(28,27,24,.12); transform:translateX(105%); transition:transform .18s; z-index:50; display:flex; flex-direction:column; }
 .chat.open{ transform:none; }
-.chat .cabc{ padding:12px 16px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:10px; background:var(--papel); }
+.chat .cabc{ padding:calc(12px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:10px; background:var(--papel); }
 .chat .cabc h3{ margin:0; font-size:16px; font-weight:600; flex:1; } .chat .cabc select{ font-size:11px; padding:4px 6px; }
 .chat .msgs{ flex:1; overflow:auto; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
 .msg{ max-width:92%; padding:10px 12px; border-radius:var(--radio); font-size:14px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
@@ -197,7 +197,7 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
 .propuesta h4{ margin:0 0 6px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--grisClaro); }
 .propuesta ul{ margin:0; padding-left:18px; font-size:13px; line-height:1.5; } .propuesta li.err{ color:var(--rojo); }
 .propuesta .acciones{ margin-top:8px; }
-.chat .entrada{ border-top:1px solid var(--linea); padding:10px 12px 14px; background:var(--papel); display:flex; flex-direction:column; gap:6px; }
+.chat .entrada{ border-top:1px solid var(--linea); padding:10px 12px calc(14px + env(safe-area-inset-bottom)); background:var(--papel); display:flex; flex-direction:column; gap:6px; }
 .chat .entrada textarea{ resize:none; min-height:48px; max-height:160px; }
 .chat .entrada .fila{ display:flex; gap:6px; align-items:center; } .chat .entrada .fila .sep{ flex:1; }
 .chat .adjuntos{ display:flex; gap:6px; flex-wrap:wrap; } .chat .adjuntos span{ font-family:'IBM Plex Mono',monospace; font-size:10px; background:var(--suave); padding:3px 8px; border-radius:10px; }
@@ -206,7 +206,7 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
 /* ---------- móvil ---------- */
 .barraMovil{ display:none; } .ajMovil{ display:none; color:var(--grisClaro); align-self:flex-start; }
 @media (max-width:720px){
-  .wrap{ padding:14px 14px 110px; }
+  .wrap{ padding:calc(14px + env(safe-area-inset-top)) 14px 110px; }
   .cab h1{ font-size:30px; } .cab .der{ display:none; } .ajMovil{ display:block; }
   .nav{ display:none; }
   .portada{ display:flex; flex-direction:column; } .col8,.col4{ display:contents; }
