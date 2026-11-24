@@ -132,6 +132,33 @@ body{
 .ahoraItem .r{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); text-transform:uppercase; letter-spacing:.06em; }
 .ahoraItem .t{ font-size:13px; margin-top:2px; }
 .ahoraItem .h{ font-size:11px; color:var(--grafito); margin-top:3px; font-style:italic; }
+/* calendario */
+.cal{ border:1.5px solid var(--tinta); background:var(--papelAlt); }
+.cal .cab{ display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1.2px solid var(--tinta); }
+.cal .cab h3{ margin:0; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:700; font-size:16px; letter-spacing:.05em; text-transform:uppercase; }
+.cal .cab .num{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); letter-spacing:.08em; margin-right:8px; }
+.cal .dias{ display:grid; grid-template-columns:repeat(7,1fr); }
+.cal .dn{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); text-align:center; padding:4px 0; border-bottom:1px solid var(--linea); text-transform:uppercase; }
+.cal .d{ min-height:64px; border-right:1px solid var(--fina); border-bottom:1px solid var(--fina); padding:3px 4px; font-size:11px; cursor:pointer; position:relative; background:#fff; }
+.cal .d:nth-child(7n){ border-right:0; }
+.cal .d.fuera{ background:transparent; color:var(--gris); }
+.cal .d.hoy .n{ background:var(--tinta); color:var(--papel); }
+.cal .d .n{ font-family:'IBM Plex Mono',monospace; font-size:10px; display:inline-block; padding:1px 4px; }
+.cal .d:hover{ background:var(--papelAlt); }
+.cal .d.sel{ outline:2px solid var(--ocre); outline-offset:-2px; }
+.marca{ display:block; font-size:10px; line-height:1.25; margin-top:2px; padding:1px 4px; border-left:3px solid var(--grafito); background:var(--papelAlt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.marca.plazo{ border-color:var(--amarillo); background:var(--amarilloClaro); }
+.marca.vencido{ border-color:var(--rojo); background:#F3DAD6; }
+.marca.hecho{ border-color:var(--verde); background:var(--verdeClaro); }
+.marca.inicio{ border-color:var(--ocre); background:var(--ocreClaro); }
+.marca.evento{ border-color:var(--tinta); background:#fff; }
+.cal.mini .d{ min-height:48px; }
+.cal.mini .marca{ font-size:9px; padding:0 3px; }
+.cal.mini{ cursor:pointer; }
+.leyenda{ display:flex; gap:10px; flex-wrap:wrap; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); border-top:1px solid var(--linea); }
+.leyenda span::before{ content:""; display:inline-block; width:8px; height:8px; margin-right:4px; vertical-align:middle; }
+.leyenda .lp::before{ background:var(--amarillo); } .leyenda .lv::before{ background:var(--rojo); } .leyenda .lh::before{ background:var(--verde); } .leyenda .li::before{ background:var(--ocre); } .leyenda .le::before{ background:var(--tinta); }
+@media (max-width:640px){ .cal .d{ min-height:52px; padding:2px; } .marca{ font-size:0; height:5px; padding:0; border-left:0; margin-top:3px; } .cal.mini .marca{ font-size:0; height:4px; } }
 .lamina.vacia{ border-style:dashed; border-color:var(--gris); color:var(--grafito); cursor:default; justify-content:center; align-items:center; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; }
 .lamina.vacia:hover{ background:var(--papelAlt); }
 @media (max-width:640px){ .cajetin{ grid-template-columns:1fr; } .cajetin .izq{ border-right:0; border-bottom:1.5px solid var(--tinta); } }
@@ -148,7 +175,7 @@ body{
       <div class="estado"><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div>
       <div id="txtActualizado">—</div>
       <div id="txtArchivo">raiz.json</div>
-      <div id="txtVersion">v1.3</div>
+      <div id="txtVersion">v1.4</div>
     </div>
   </div>
 
@@ -169,6 +196,12 @@ body{
   </div>
 
   <div class="arbol" id="arbol"></div>
+  </section>
+
+  <!-- CALENDARIO -->
+  <section class="vista" id="vCalendario">
+  <div class="nav"><button class="btn sec" data-ir="inicio">◀ Inicio</button><span class="titulo">Calendario</span></div>
+  <div id="calGrande"></div>
   </section>
 
   <!-- DIARIO -->
@@ -311,7 +344,7 @@ function addDiario(texto){ (datos.diario = datos.diario || []).unshift({ fecha: 
 function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; guardar(); }
 
 /* ---------- vistas ---------- */
-const VISTAS = { inicio:"vInicio", arbol:"vArbol", diario:"vDiario" };
+const VISTAS = { inicio:"vInicio", arbol:"vArbol", diario:"vDiario", calendario:"vCalendario" };
 let vista = "inicio";
 function ir(v, guardarEstado=true){
   if(!VISTAS[v]) v = "inicio";
@@ -332,6 +365,68 @@ function activosHoy(){
   }
   return out;
 }
+/* ---------- calendario ---------- */
+let calMes = hoy().slice(0,7);   // "YYYY-MM"
+let calDia = null;               // día seleccionado en la vista grande
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function fechaStr(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function marcasDelDia(f){
+  const out = []; const h = hoy();
+  for(const n of datos.nodos){
+    if(n.tipo !== "cuadro" && n.tipo !== "paso") continue;
+    if(n.inicio === f) out.push({ cls:"inicio", txt:"▶ " + n.titulo, nodo:n.id });
+    if(n.plazo === f){ const cls = n.estado === "hecho" ? "hecho" : (f < h ? "vencido" : "plazo"); out.push({ cls, txt:"◆ " + n.titulo, nodo:n.id }); }
+    if(n.cerrado === f && n.plazo !== f) out.push({ cls:"hecho", txt:"✓ " + n.titulo, nodo:n.id });
+  }
+  for(const e of (datos.eventos||[])) if(e.fecha === f) out.push({ cls:"evento", txt:e.texto, evento:e.id, nodo:e.nodo });
+  return out;
+}
+function renderCal(mes, mini){
+  const [y,m] = mes.split("-").map(Number);
+  const primero = new Date(y, m-1, 1); const dow = (primero.getDay()+6)%7; // lunes=0
+  const inicio = new Date(y, m-1, 1 - dow);
+  const h0 = hoy();
+  let h = `<div class="cal ${mini?'mini':''}" ${mini?'data-ir="calendario"':''}><div class="cab"><div><span class="num">03 · CALENDARIO</span><h3 style="display:inline">${MESES[m-1]} ${y}</h3></div>`;
+  h += mini ? `<span class="num">pulsa para abrir</span>` : `<div><button class="btn sec" data-cal="-1">◀</button> <button class="btn sec" data-cal="0">Hoy</button> <button class="btn sec" data-cal="1">▶</button></div>`;
+  h += `</div><div class="dias">` + ["lu","ma","mi","ju","vi","sá","do"].map(d=>`<div class="dn">${d}</div>`).join("");
+  const semanas = mini ? 6 : 6;
+  for(let i=0;i<semanas*7;i++){
+    const d = new Date(inicio); d.setDate(inicio.getDate()+i); const f = fechaStr(d);
+    if(mini && i >= 35 && d.getMonth() !== m-1) break;
+    const fuera = d.getMonth() !== m-1;
+    const ms = marcasDelDia(f); const max = mini ? 2 : 4;
+    h += `<div class="d ${fuera?'fuera':''} ${f===h0?'hoy':''} ${f===calDia&&!mini?'sel':''}" data-dia="${f}"><span class="n">${d.getDate()}</span>`;
+    h += ms.slice(0,max).map(x => `<span class="marca ${x.cls}" title="${esc(x.txt)}">${esc(x.txt)}</span>`).join("");
+    if(ms.length > max) h += `<span class="marca">+${ms.length-max}</span>`;
+    h += `</div>`;
+  }
+  h += `</div><div class="leyenda"><span class="lp">plazo</span><span class="lv">vencido</span><span class="lh">hecho</span><span class="li">inicio</span><span class="le">anotación</span></div></div>`;
+  return h;
+}
+function renderCalendario(){
+  const el = $("#calGrande"); if(!datos){ el.innerHTML = '<div class="aviso">Sin datos.</div>'; return; }
+  el.innerHTML = renderCal(calMes, false);
+  el.querySelectorAll("[data-cal]").forEach(b => b.onclick = () => { const k = +b.dataset.cal; if(k===0){ calMes = hoy().slice(0,7); } else { const [y,m] = calMes.split("-").map(Number); const d = new Date(y, m-1+k, 1); calMes = fechaStr(d).slice(0,7); } renderCalendario(); });
+  el.querySelectorAll("[data-dia]").forEach(d => d.onclick = () => { calDia = d.dataset.dia; abrirDia(calDia); renderCalendario(); });
+}
+function abrirDia(f){
+  selId = null;
+  $("#panel").classList.add("open"); $("#velo").classList.add("open");
+  const d = new Date(f + "T00:00:00");
+  $("#pRuta").textContent = "calendario";
+  $("#pTitulo").textContent = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"][(d.getDay()+6)%7] + " " + d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear();
+  const ms = marcasDelDia(f);
+  let h = `<div class="lista">` + (ms.length ? ms.map(x => `<div class="paso" ${x.nodo?('data-abrir="'+x.nodo+'"'):''}><span class="marca ${x.cls}" style="white-space:normal;flex:1">${esc(x.txt)}</span>${x.evento?('<span class="mini"><button data-xe="'+x.evento+'" title="Borrar anotación">✕</button></span>'):''}</div>`).join("") : '<div class="aviso">Nada ese día.</div>') + `</div>`;
+  const activos = datos.nodos.filter(n => (n.tipo==="cuadro"||n.tipo==="paso") && n.estado !== "hecho");
+  h += `<div class="campo"><label>Anotar en este día</label><input id="evTxt" placeholder="Reunión, visita, entrega…" /></div>`;
+  h += `<div class="campo"><label>Vincular a un cuadro (opcional)</label><select id="evNodo" style="width:100%;font:inherit;font-size:13px;padding:6px 8px;border:1.2px solid var(--linea);background:#fff"><option value="">—</option>${activos.map(n=>`<option value="${n.id}">${esc(n.titulo)}</option>`).join("")}</select></div>`;
+  h += `<div class="acciones"><button class="btn" id="bEv">Anotar</button></div>`;
+  const c = $("#pCuerpo"); c.innerHTML = h;
+  $("#bEv").onclick = () => { const t = $("#evTxt").value.trim(); if(!t) return; (datos.eventos = datos.eventos || []).push({ id: "ev" + Date.now().toString(36), fecha: f, texto: t, nodo: $("#evNodo").value || undefined }); guardar(); abrirDia(f); renderCalendario(); };
+  $("#evTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bEv").click(); });
+  c.querySelectorAll("[data-xe]").forEach(b => b.onclick = (e) => { e.stopPropagation(); datos.eventos = (datos.eventos||[]).filter(x => x.id !== b.dataset.xe); guardar(); abrirDia(f); renderCalendario(); });
+  c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = (e) => { if(e.target.closest(".mini")) return; ir("arbol"); abrir(p.dataset.abrir); });
+}
 function renderInicio(){
   const el = $("#indice"); if(!datos){ el.innerHTML = '<div class="aviso">Sin datos. Entra en El árbol y vincula raiz.json o conecta Dropbox.</div>'; return; }
   const act = activosHoy();
@@ -343,8 +438,9 @@ function renderInicio(){
   h += `</div>`;
   h += `<div class="lamina" data-ir="arbol"><div class="num">01</div><h3>El árbol</h3><p>Objetivo, raíces, cuadros y pasos. Lo que se desbloquea al terminar lo anterior.</p><div class="pie">${hechos}/${total} cuadros hechos · ${act.length} activo${act.length===1?'':'s'}</div></div>`;
   h += `<div class="lamina" data-ir="diario"><div class="num">02</div><h3>Diario</h3><p>Lo que apuntas cada día, sin orden ni obligación.</p><div class="pie">${ultimo ? ultimo.fecha + ' · ' + esc(ultimo.texto).slice(0,60) : 'sin entradas'}</div></div>`;
-  h += `<div class="lamina vacia">03 · lámina por definir</div>`;
   el.innerHTML = h;
+  const calEl = document.createElement("div"); calEl.style.gridColumn = "1/-1"; calEl.innerHTML = renderCal(hoy().slice(0,7), true); el.appendChild(calEl);
+  calEl.querySelector(".cal").onclick = () => { calMes = hoy().slice(0,7); ir("calendario"); };
   el.querySelectorAll("[data-abrirnodo]").forEach(x => x.onclick = () => { ir("arbol"); abrir(x.dataset.abrirnodo); });
 }
 
@@ -352,6 +448,7 @@ function renderInicio(){
 function render(){
   if(datos){ $("#titulo").textContent = datos.titulo || "La raíz"; $("#lema").textContent = datos.lema || ""; $("#txtActualizado").textContent = "act. " + (datos.actualizado || "").replace("T"," ").slice(0,16); }
   if(vista === "inicio"){ renderInicio(); return; }
+  if(vista === "calendario"){ renderCalendario(); return; }
   if(!datos){ $("#arbol").innerHTML = '<div class="aviso">Sin datos. Vincula raiz.json o conecta Dropbox.</div>'; return; }
   $("#titulo").textContent = datos.titulo || "La raíz";
   $("#lema").textContent = datos.lema || "";
@@ -397,7 +494,7 @@ function render(){
   if(selId) renderPanel();
 }
 function abrir(id){ selId = id; $("#panel").classList.add("open"); $("#velo").classList.add("open"); render(); }
-function cerrar(){ selId = null; $("#panel").classList.remove("open"); $("#velo").classList.remove("open"); render(); }
+function cerrar(){ selId = null; calDia = null; $("#panel").classList.remove("open"); $("#velo").classList.remove("open"); render(); }
 function renderPanel(){
   const n = nodo(selId); if(!n){ cerrar(); return; }
   $("#pRuta").textContent = ruta(n.padre).join(" › ") + "  ·  " + n.id;
@@ -415,7 +512,7 @@ function renderPanel(){
   </div>`;
   h += `<div class="campo"><label>Título</label><input data-e="titulo" value="${esc(n.titulo)}" /></div>`;
   h += `<div class="campo"><label>Hecho cuando…</label><input data-e="hecho_cuando" value="${esc(n.hecho_cuando||'')}" placeholder="Criterio verificable" /></div>`;
-  h += `<div class="campo"><label>Plazo</label><input data-e="plazo" type="date" value="${n.plazo||''}" /></div>`;
+  h += `<div class="acciones" style="gap:10px"><div class="campo" style="flex:1"><label>Inicio</label><input data-e="inicio" type="date" value="${n.inicio||''}" /></div><div class="campo" style="flex:1"><label>Plazo</label><input data-e="plazo" type="date" value="${n.plazo||''}" /></div></div>`;
   // pasos
   h += `<div><div class="campo"><label>${n.tipo==='raiz'?'Cuadros':'Pasos'} (${hs.filter(x=>x.estado==='hecho').length}/${hs.length})</label></div><div class="lista">`;
   hs.forEach((p,i) => { h += `<div class="paso ${p.estado}" data-abrir="${p.id}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="t" style="flex:1">${esc(p.titulo)}</span>
