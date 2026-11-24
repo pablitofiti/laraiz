@@ -539,6 +539,11 @@ $("#bandejaTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bCap
   const q = new URLSearchParams(location.search);
   if(q.get("code")){ try{ await dbxCanjearCodigo(q.get("code")); toast("Dropbox conectado"); }catch(e){ alert("Error al conectar Dropbox: " + e.message); } history.replaceState(null,"",location.pathname); }
   await cargarInicial(); if(datos) migrar();
-  ir(sessionStorage.getItem("raiz.vista") || "inicio", false);
+  // entrada por URL (atajos de iOS / enlaces): ?capturar=texto  |  ?claude=texto
+  const cap = q.get("capturar"), cla = q.get("claude");
+  if(cap || cla) history.replaceState(null,"",location.pathname);
+  if(cap && datos){ capturar(cap.trim()); guardar(); ir("bandeja", false); toast("Capturado en la bandeja"); }
+  else if(cla && datos){ ir("inicio", false); abrirChat(); $("#chatTxt").value = cla.trim(); setTimeout(() => enviar(), 300); }
+  else ir(sessionStorage.getItem("raiz.vista") || "inicio", false);
   if("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(()=>{});
 })();
