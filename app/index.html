@@ -105,6 +105,39 @@ body{
 .nota .f{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
 .velo{ position:fixed; inset:0; background:rgba(21,24,26,.25); z-index:15; display:none; }
 .velo.open{ display:block; }
+/* editable */
+.ed{ cursor:text; border-bottom:1px dashed transparent; }
+.ed:hover{ border-bottom-color:var(--ocre); }
+input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(--ocre); padding:1px 4px; width:100%; max-width:100%; }
+/* atención */
+.atencion{ grid-column:1/-1; display:grid; grid-template-columns:repeat(3,1fr); gap:0; border:1.5px solid var(--tinta); background:var(--papelAlt); }
+.atencion > div{ padding:8px 10px; border-right:1.2px solid var(--tinta); min-height:90px; }
+.atencion > div:last-child{ border-right:0; }
+.atencion h4{ margin:0 0 6px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--grafito); display:flex; justify-content:space-between; }
+.atencion .it{ font-size:12px; padding:4px 6px; margin-bottom:4px; background:#fff; border-left:3px solid var(--grafito); cursor:pointer; }
+.atencion .imp .it{ border-color:var(--amarillo); } .atencion .ven .it{ border-color:var(--rojo); } .atencion .pro .it{ border-color:var(--ocre); }
+.atencion .it small{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
+.atencion .nada{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--gris); }
+@media (max-width:640px){ .atencion{ grid-template-columns:1fr; } .atencion > div{ border-right:0; border-bottom:1.2px solid var(--tinta); } .atencion > div:last-child{ border-bottom:0; } }
+.estrella{ font:inherit; border:0; background:none; cursor:pointer; font-size:15px; color:var(--gris); padding:0 4px; line-height:1; }
+.estrella.on{ color:#C9A227; }
+/* bandeja */
+.bandeja .item{ display:flex; gap:8px; align-items:flex-start; background:#fff; border:1px solid var(--linea); padding:6px 8px; }
+.bandeja .item .tx{ flex:1; font-size:13px; }
+.bandeja .item .f{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
+.bandeja .item.imp{ border-left:3px solid #C9A227; }
+.bandeja details{ margin-top:10px; } .bandeja summary{ cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grafito); text-transform:uppercase; letter-spacing:.06em; }
+.opciones{ display:grid; grid-template-columns:1fr; gap:6px; }
+.opciones .op{ border:1.2px solid var(--tinta); background:#fff; padding:8px 10px; cursor:pointer; display:flex; gap:8px; align-items:center; }
+.opciones .op:hover{ background:var(--amarilloClaro); }
+.opciones .op b{ font-family:'IBM Plex Mono',monospace; font-size:11px; min-width:90px; text-transform:uppercase; letter-spacing:.04em; }
+.opciones select,.opciones input[type=date]{ font:inherit; font-size:12px; padding:3px 6px; border:1px solid var(--linea); flex:1; min-width:0; max-width:62%; }
+/* revisión */
+.rev{ display:flex; flex-direction:column; gap:14px; }
+.rev section{ border:1.2px solid var(--tinta); background:var(--papelAlt); }
+.rev section h2{ margin:0; padding:8px 10px; font-family:'IBM Plex Sans Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-bottom:1.2px solid var(--tinta); display:flex; justify-content:space-between; }
+.rev section h2 small{ font-family:'IBM Plex Mono',monospace; font-weight:400; font-size:10px; color:var(--grafito); }
+.rev .cuerpo{ padding:10px; display:flex; flex-direction:column; gap:6px; }
 /* diario */
 .diario{ margin-top:18px; border:1.2px solid var(--tinta); background:var(--papelAlt); }
 .diario h2{ margin:0; padding:8px 10px; font-family:'IBM Plex Sans Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-bottom:1.2px solid var(--tinta); }
@@ -175,7 +208,7 @@ body{
       <div class="estado"><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div>
       <div id="txtActualizado">—</div>
       <div id="txtArchivo">raiz.json</div>
-      <div id="txtVersion">v1.4</div>
+      <div id="txtVersion">v1.5</div>
     </div>
   </div>
 
@@ -204,16 +237,23 @@ body{
   <div id="calGrande"></div>
   </section>
 
-  <!-- DIARIO -->
-  <section class="vista" id="vDiario">
-  <div class="nav"><button class="btn sec" data-ir="inicio">◀ Inicio</button><span class="titulo">Diario</span></div>
-  <div class="diario">
-    <h2>Diario</h2>
+  <!-- BANDEJA -->
+  <section class="vista" id="vBandeja">
+  <div class="nav"><button class="btn sec" data-ir="inicio">◀ Inicio</button><span class="titulo" id="tBandeja">Bandeja</span></div>
+  <div class="diario bandeja">
     <div class="cuerpo">
-      <div class="alta"><input id="diarioTxt" placeholder="Apunta algo de hoy…" /><button class="btn" id="bDiario">Anotar</button></div>
-      <div class="lista" id="diarioLista"></div>
+      <div class="alta"><input id="bandejaTxt" placeholder="Captura: una idea, una llamada, algo que mirar…" /><button class="btn" id="bCapturar">Capturar</button></div>
+      <div class="lista" id="bandejaLista"></div>
+      <details id="bandejaAlgun"><summary>Algún día / quizá (<span id="nAlgun">0</span>)</summary><div class="lista" id="bandejaAlgunLista" style="margin-top:6px"></div></details>
+      <details><summary>Archivadas (<span id="nArch">0</span>)</summary><div class="lista" id="bandejaArchLista" style="margin-top:6px"></div></details>
     </div>
   </div>
+  </section>
+
+  <!-- REVISIÓN -->
+  <section class="vista" id="vRevision">
+  <div class="nav"><button class="btn sec" data-ir="inicio">◀ Inicio</button><span class="titulo">Revisión semanal</span></div>
+  <div class="rev" id="revision"></div>
   </section>
 </div>
 
@@ -339,12 +379,136 @@ function moverA(id, nuevoPadre, indice){
   if(origen !== nuevoPadre) hijos(origen).forEach((h,k) => h.orden = k + 1);
   guardar(); render();
 }
-function addNota(id, texto){ const n=nodo(id); (n.notas = n.notas || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
-function addDiario(texto){ (datos.diario = datos.diario || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
-function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; guardar(); }
+function addNota(id, texto){ const n=nodo(id); (n.notas = n.notas || []).unshift({ fecha: hoy(), texto }); n.tocado = hoy(); guardar(); render(); }
+/* ---------- textos editables ---------- */
+const TEXTOS_DEF = { ahora:"Lo que toca", arbol_t:"El árbol", arbol_d:"Objetivo, raíces, cuadros y pasos. Lo que se desbloquea al terminar lo anterior.", bandeja_t:"Bandeja", bandeja_d:"Captura todo aquí y luego decide dónde va. Vacía es la meta.", revision_t:"Revisión semanal", revision_d:"Una vez por semana: bandeja, pasos parados, plazos y una línea." };
+function texto(k){ return (datos.textos && datos.textos[k]) || TEXTOS_DEF[k] || ""; }
+function setTexto(k, v){ datos.textos = datos.textos || {}; if(v) datos.textos[k] = v; else delete datos.textos[k]; guardar(); render(); }
+function editable(el, valor, onOk, multi){
+  // convierte un elemento en editable con un clic
+  el.classList.add("ed"); el.title = "Doble clic para editar";
+  el.ondblclick = (e) => {
+    e.stopPropagation(); e.preventDefault();
+    const inp = document.createElement("input"); inp.className = "edIn"; inp.value = valor;
+    el.replaceWith(inp); inp.focus(); inp.select();
+    let fin = false; const ok = () => { if(fin) return; fin = true; onOk(inp.value.trim()); };
+    inp.onblur = ok; inp.onkeydown = (ev) => { if(ev.key==="Enter") ok(); if(ev.key==="Escape"){ fin = true; render(); } };
+    inp.onclick = (ev) => ev.stopPropagation();
+  };
+}
+/* ---------- bandeja (GTD) ---------- */
+function migrar(){
+  // diario antiguo -> bandeja pendiente (una sola vez)
+  if(datos.diario && datos.diario.length){
+    datos.bandeja = datos.bandeja || [];
+    for(const d of datos.diario) datos.bandeja.push({ id: "b" + Math.random().toString(36).slice(2,8), fecha: d.fecha, texto: d.texto, estado: "pendiente" });
+    delete datos.diario; guardar();
+  }
+  datos.bandeja = datos.bandeja || []; datos.revisiones = datos.revisiones || [];
+}
+function capturar(texto){ datos.bandeja.unshift({ id: "b" + Date.now().toString(36), fecha: hoy(), texto, estado: "pendiente" }); guardar(); render(); }
+function itemBandeja(id){ return datos.bandeja.find(b => b.id === id); }
+function procesar(id, accion, arg){
+  const b = itemBandeja(id); if(!b) return;
+  if(accion === "paso" && arg){ const p = nodo(arg); if(p.estado !== "activo") p.estado = "activo"; nuevoHijoSilencioso(arg, b.texto, b.importante); b.estado = "archivado"; b.destino = "paso en " + p.titulo; }
+  if(accion === "cuadro" && arg){ const r = nodo(arg); const hs = hijos(arg); const n = nuevoHijoSilencioso(arg, b.texto, b.importante, true); b.estado = "archivado"; b.destino = "cuadro en " + r.titulo; }
+  if(accion === "calendario" && arg){ (datos.eventos = datos.eventos || []).push({ id: "ev" + Date.now().toString(36), fecha: arg, texto: b.texto }); b.estado = "archivado"; b.destino = "calendario " + arg; }
+  if(accion === "nota" && arg){ const n = nodo(arg); (n.notas = n.notas || []).unshift({ fecha: hoy(), texto: b.texto }); b.estado = "archivado"; b.destino = "nota en " + n.titulo; }
+  if(accion === "algundia") b.estado = "algundia";
+  if(accion === "archivar"){ b.estado = "archivado"; b.destino = "archivado"; }
+  if(accion === "pendiente") b.estado = "pendiente";
+  if(accion === "borrar") datos.bandeja = datos.bandeja.filter(x => x.id !== id);
+  b.procesado = hoy(); guardar(); cerrar();
+}
+function nuevoHijoSilencioso(padreId, titulo, importante, comoCuadro){
+  const p = nodo(padreId); const hs = hijos(padreId);
+  const base = padreId + "." + titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,24);
+  let id = base, k = 2; while(nodo(id)) id = base + "-" + (k++);
+  const tipo = (p.tipo === "raiz" || comoCuadro) ? "cuadro" : "paso";
+  const estado = hs.length === 0 ? (tipo === "paso" ? "activo" : "disponible") : (hs.every(h=>h.estado==="hecho") ? "disponible" : "bloqueado");
+  const n = { id, padre: padreId, tipo, titulo, estado, orden: hs.length + 1, creado: hoy() }; if(importante) n.importante = true;
+  datos.nodos.push(n); return n;
+}
+function toggleImportante(id, esBandeja){
+  const x = esBandeja ? itemBandeja(id) : nodo(id); if(!x) return;
+  if(x.importante) delete x.importante; else x.importante = true;
+  guardar(); render();
+}
+function abrirBandeja(id){
+  const b = itemBandeja(id); if(!b) return; selId = null;
+  $("#panel").classList.add("open"); $("#velo").classList.add("open");
+  $("#pRuta").textContent = "bandeja · " + b.fecha + (b.destino ? " · " + b.destino : "");
+  $("#pTitulo").textContent = b.texto;
+  const activos = datos.nodos.filter(n => n.tipo === "cuadro" && n.estado === "activo");
+  const cuadros = datos.nodos.filter(n => (n.tipo === "cuadro" || n.tipo === "paso") && n.estado !== "hecho");
+  const rs = raices();
+  const sel = (arr, id) => `<select id="${id}">${arr.map(n => `<option value="${n.id}">${esc(n.titulo)}</option>`).join("")}</select>`;
+  let h = `<div class="acciones"><button class="estrella ${b.importante?'on':''}" data-a="imp" title="Importante">★</button><div class="campo" style="flex:1"><input id="bTexto" value="${esc(b.texto)}" /></div></div>`;
+  h += `<div class="campo"><label>¿Qué es esto?</label></div><div class="opciones">`;
+  h += `<div class="op" data-a="paso"><b>→ paso</b> de ${activos.length ? sel(activos, "selPaso") : '<span class="aviso">(no hay cuadros activos)</span>'}</div>`;
+  h += `<div class="op" data-a="cuadro"><b>→ cuadro</b> en ${sel(rs, "selRaiz")}</div>`;
+  h += `<div class="op" data-a="calendario"><b>→ calendario</b> <input type="date" id="selFecha" value="${hoy()}" /></div>`;
+  h += `<div class="op" data-a="nota"><b>→ nota</b> de ${sel(cuadros, "selNota")}</div>`;
+  h += `<div class="op" data-a="algundia"><b>algún día</b> quizá, no ahora</div>`;
+  h += `<div class="op" data-a="archivar"><b>archivar</b> hecho o descartado</div>`;
+  if(b.estado !== "pendiente") h += `<div class="op" data-a="pendiente"><b>↩ bandeja</b> volver a pendiente</div>`;
+  h += `<div class="op" data-a="borrar" style="color:var(--rojo)"><b>borrar</b> eliminar del todo</div></div>`;
+  const c = $("#pCuerpo"); c.innerHTML = h;
+  $("#bTexto").onchange = () => { b.texto = $("#bTexto").value.trim() || b.texto; guardar(); };
+  c.querySelectorAll("select,input").forEach(x => x.onclick = (e) => e.stopPropagation());
+  c.querySelectorAll("[data-a]").forEach(o => o.onclick = () => {
+    const a = o.dataset.a; b.texto = $("#bTexto").value.trim() || b.texto;
+    if(a === "imp"){ toggleImportante(id, true); abrirBandeja(id); return; }
+    const arg = a==="paso" ? ($("#selPaso")||{}).value : a==="cuadro" ? $("#selRaiz").value : a==="calendario" ? $("#selFecha").value : a==="nota" ? $("#selNota").value : null;
+    if((a==="paso"||a==="cuadro"||a==="nota"||a==="calendario") && !arg){ toast("Elige el destino"); return; }
+    procesar(id, a, arg);
+  });
+}
+function renderBandeja(){
+  $("#tBandeja").textContent = texto("bandeja_t");
+  const pint = (arr, vacio) => arr.length ? arr.map(b => `<div class="item ${b.importante?'imp':''}" data-b="${b.id}"><button class="estrella ${b.importante?'on':''}" data-imp="${b.id}">★</button><div class="tx">${esc(b.texto)}<div class="f">${b.fecha}${b.destino?' · '+esc(b.destino):''}</div></div></div>`).join("") : `<div class="aviso">${vacio}</div>`;
+  const pend = datos.bandeja.filter(b => b.estado === "pendiente"), alg = datos.bandeja.filter(b => b.estado === "algundia"), arch = datos.bandeja.filter(b => b.estado === "archivado").slice(0,30);
+  $("#bandejaLista").innerHTML = pint(pend, "Bandeja vacía. Bien.");
+  $("#bandejaAlgunLista").innerHTML = pint(alg, "Nada aparcado."); $("#nAlgun").textContent = alg.length;
+  $("#bandejaArchLista").innerHTML = pint(arch, "Nada archivado."); $("#nArch").textContent = datos.bandeja.filter(b => b.estado === "archivado").length;
+  document.querySelectorAll("#vBandeja [data-b]").forEach(el => el.onclick = (e) => { if(e.target.closest("[data-imp]")) return; abrirBandeja(el.dataset.b); });
+  document.querySelectorAll("#vBandeja [data-imp]").forEach(b => b.onclick = (e) => { e.stopPropagation(); toggleImportante(b.dataset.imp, true); });
+}
+/* ---------- atención: importante / vencido / próximo ---------- */
+function atencion(){
+  const h = hoy(); const lim = new Date(); lim.setDate(lim.getDate() + 7); const h7 = fechaStr(lim);
+  const vivos = datos.nodos.filter(n => (n.tipo === "cuadro" || n.tipo === "paso") && n.estado !== "hecho");
+  const imp = [...vivos.filter(n => n.importante).map(n => ({ t:n.titulo, s: ruta(n.padre).slice(-1)[0], nodo:n.id })), ...datos.bandeja.filter(b => b.importante && b.estado !== "archivado").map(b => ({ t:b.texto, s:"bandeja", band:b.id }))];
+  const ven = vivos.filter(n => n.plazo && n.plazo < h).sort((a,b) => a.plazo.localeCompare(b.plazo)).map(n => ({ t:n.titulo, s:"venció " + n.plazo, nodo:n.id }));
+  const pro = vivos.filter(n => n.plazo && n.plazo >= h && n.plazo <= h7).sort((a,b) => a.plazo.localeCompare(b.plazo)).map(n => ({ t:n.titulo, s:"vence " + n.plazo, nodo:n.id }));
+  return { imp, ven, pro };
+}
+/* ---------- revisión semanal ---------- */
+function renderRevision(){
+  const el = $("#revision"); const h0 = hoy(); const d7 = new Date(); d7.setDate(d7.getDate()-7); const hace7 = fechaStr(d7); const d15 = new Date(); d15.setDate(d15.getDate()+15); const en15 = fechaStr(d15);
+  const pend = datos.bandeja.filter(b => b.estado === "pendiente");
+  const parados = datos.nodos.filter(n => n.tipo === "paso" && n.estado === "activo" && (n.tocado || n.activado || n.creado || "2000-01-01") < hace7);
+  const vivos = datos.nodos.filter(n => (n.tipo === "cuadro" || n.tipo === "paso") && n.estado !== "hecho");
+  const prox = vivos.filter(n => n.plazo && n.plazo <= en15).sort((a,b) => a.plazo.localeCompare(b.plazo));
+  const alg = datos.bandeja.filter(b => b.estado === "algundia");
+  const hechosSemana = datos.nodos.filter(n => n.cerrado && n.cerrado >= hace7);
+  const item = (t, s, attr) => `<div class="paso" ${attr}><span class="t" style="flex:1">${esc(t)}</span><span class="n">${esc(s||"")}</span></div>`;
+  let h = `<section><h2>1 · Bandeja <small>${pend.length} sin procesar</small></h2><div class="cuerpo">${pend.length ? pend.slice(0,10).map(b => item(b.texto, b.fecha, 'data-b="'+b.id+'"')).join("") + (pend.length>10?'<div class="aviso">…y '+(pend.length-10)+' más</div>':'') : '<div class="aviso">Vacía. Bien.</div>'}<div class="acciones"><button class="btn sec" data-ir="bandeja">Ir a la bandeja</button></div></div></section>`;
+  h += `<section><h2>2 · Hecho esta semana <small>${hechosSemana.length}</small></h2><div class="cuerpo">${hechosSemana.length ? hechosSemana.map(n => item(n.titulo, n.cerrado, 'data-abrir="'+n.id+'"')).join("") : '<div class="aviso">Nada cerrado en 7 días.</div>'}</div></section>`;
+  h += `<section><h2>3 · Pasos activos parados <small>sin tocar más de 7 días</small></h2><div class="cuerpo">${parados.length ? parados.map(n => item(n.titulo, "desde " + (n.tocado||n.activado||n.creado), 'data-abrir="'+n.id+'"')).join("") : '<div class="aviso">Todo lo activo se ha movido esta semana.</div>'}</div></section>`;
+  h += `<section><h2>4 · Plazos en 15 días <small>${prox.length}</small></h2><div class="cuerpo">${prox.length ? prox.map(n => item(n.titulo, (n.plazo < h0 ? "VENCIÓ " : "") + n.plazo, 'data-abrir="'+n.id+'"')).join("") : '<div class="aviso">Nada vence en dos semanas.</div>'}</div></section>`;
+  h += `<section><h2>5 · Algún día / quizá <small>${alg.length}</small></h2><div class="cuerpo">${alg.length ? alg.map(b => item(b.texto, b.fecha, 'data-b="'+b.id+'"')).join("") : '<div class="aviso">Nada aparcado.</div>'}</div></section>`;
+  h += `<section><h2>6 · La línea de la semana</h2><div class="cuerpo"><div class="alta" style="display:flex;gap:6px"><input id="revTxt" placeholder="Qué ha pasado, qué toca, cómo vas…" style="flex:1;font:inherit;font-size:13px;padding:6px 8px;border:1.2px solid var(--linea);background:#fff" /><button class="btn" id="bRev">Cerrar revisión</button></div>`;
+  h += (datos.revisiones||[]).slice(0,12).map(r => `<div class="nota"><div class="f">${r.fecha}</div>${esc(r.texto)}</div>`).join("") + `</div></section>`;
+  el.innerHTML = h;
+  el.querySelectorAll("[data-abrir]").forEach(x => x.onclick = () => { ir("arbol"); abrir(x.dataset.abrir); });
+  el.querySelectorAll("[data-b]").forEach(x => x.onclick = () => abrirBandeja(x.dataset.b));
+  $("#bRev").onclick = () => { const t = $("#revTxt").value.trim(); datos.revisiones.unshift({ fecha: hoy(), texto: t || "(sin texto)" }); datos.ultimaRevision = hoy(); guardar(); render(); toast("Revisión cerrada"); };
+}
+function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; n.tocado = hoy(); guardar(); }
 
 /* ---------- vistas ---------- */
-const VISTAS = { inicio:"vInicio", arbol:"vArbol", diario:"vDiario", calendario:"vCalendario" };
+const VISTAS = { inicio:"vInicio", arbol:"vArbol", bandeja:"vBandeja", calendario:"vCalendario", revision:"vRevision" };
 let vista = "inicio";
 function ir(v, guardarEstado=true){
   if(!VISTAS[v]) v = "inicio";
@@ -431,24 +595,39 @@ function renderInicio(){
   const el = $("#indice"); if(!datos){ el.innerHTML = '<div class="aviso">Sin datos. Entra en El árbol y vincula raiz.json o conecta Dropbox.</div>'; return; }
   const act = activosHoy();
   const total = datos.nodos.filter(n => n.tipo === "cuadro").length, hechos = datos.nodos.filter(n => n.tipo === "cuadro" && n.estado === "hecho").length;
-  const ultimo = (datos.diario||[])[0];
-  let h = `<div class="lamina ahora"><div class="num">00 · AHORA</div><h3>Lo que toca</h3>`;
+  datos.bandeja = datos.bandeja || []; const pend = datos.bandeja.filter(b => b.estado === "pendiente").length;
+  const at = atencion();
+  const obj = nodo("arbol");
+  let h = `<div class="lamina ahora"><div class="num">00 · AHORA</div><h3 id="edAhora">${esc(texto("ahora"))}</h3>`;
   h += act.length ? `<div class="ahoraLista">` + act.map(a => `<div class="ahoraItem" data-abrirnodo="${a.nodo.id}"><div class="r">${esc(a.raiz.titulo)}</div><div class="t">${esc(a.nodo.titulo)}</div>${a.nodo.hecho_cuando?'<div class="h">hecho cuando: '+esc(a.nodo.hecho_cuando)+'</div>':''}</div>`).join("") + `</div>`
                    : `<p>Nada activo. Entra en el árbol y activa un cuadro.</p>`;
   h += `</div>`;
-  h += `<div class="lamina" data-ir="arbol"><div class="num">01</div><h3>El árbol</h3><p>Objetivo, raíces, cuadros y pasos. Lo que se desbloquea al terminar lo anterior.</p><div class="pie">${hechos}/${total} cuadros hechos · ${act.length} activo${act.length===1?'':'s'}</div></div>`;
-  h += `<div class="lamina" data-ir="diario"><div class="num">02</div><h3>Diario</h3><p>Lo que apuntas cada día, sin orden ni obligación.</p><div class="pie">${ultimo ? ultimo.fecha + ' · ' + esc(ultimo.texto).slice(0,60) : 'sin entradas'}</div></div>`;
+  const col = (cls, tit, arr, vacio) => `<div class="${cls}"><h4><span>${tit}</span><span>${arr.length||''}</span></h4>${arr.length ? arr.slice(0,6).map(x => `<div class="it" ${x.nodo?'data-abrirnodo="'+x.nodo+'"':''} ${x.band?'data-abrirband="'+x.band+'"':''}>${esc(x.t)}<small>${esc(x.s||'')}</small></div>`).join("") + (arr.length>6?'<div class="nada">+'+(arr.length-6)+' más</div>':'') : '<div class="nada">'+vacio+'</div>'}</div>`;
+  h += `<div class="atencion">${col("imp","★ Importante",at.imp,"nada marcado")}${col("ven","Vencido",at.ven,"nada vencido")}${col("pro","Próximos 7 días",at.pro,"nada esta semana")}</div>`;
+  h += `<div class="lamina" data-ir="arbol"><div class="num">01</div><h3 id="edArbolT">${esc(texto("arbol_t"))}</h3><p id="edArbolD">${esc(texto("arbol_d"))}</p><div class="pie">${hechos}/${total} cuadros hechos · ${act.length} activo${act.length===1?'':'s'}</div></div>`;
+  h += `<div class="lamina" data-ir="bandeja"><div class="num">02</div><h3 id="edBandejaT">${esc(texto("bandeja_t"))}</h3><p id="edBandejaD">${esc(texto("bandeja_d"))}</p><div class="pie">${pend ? pend + ' sin procesar' : 'vacía'}</div></div>`;
+  h += `<div class="lamina" data-ir="revision"><div class="num">04</div><h3 id="edRevT">${esc(texto("revision_t"))}</h3><p id="edRevD">${esc(texto("revision_d"))}</p><div class="pie">${datos.ultimaRevision ? 'última: ' + datos.ultimaRevision : 'ninguna todavía'}</div></div>`;
   el.innerHTML = h;
   const calEl = document.createElement("div"); calEl.style.gridColumn = "1/-1"; calEl.innerHTML = renderCal(hoy().slice(0,7), true); el.appendChild(calEl);
   calEl.querySelector(".cal").onclick = () => { calMes = hoy().slice(0,7); ir("calendario"); };
-  el.querySelectorAll("[data-abrirnodo]").forEach(x => x.onclick = () => { ir("arbol"); abrir(x.dataset.abrirnodo); });
+  el.querySelectorAll("[data-abrirnodo]").forEach(x => x.onclick = (e) => { e.stopPropagation(); ir("arbol"); abrir(x.dataset.abrirnodo); });
+  el.querySelectorAll("[data-abrirband]").forEach(x => x.onclick = (e) => { e.stopPropagation(); ir("bandeja"); abrirBandeja(x.dataset.abrirband); });
+  // textos editables de la portada
+  editable($("#titulo"), datos.titulo || "La raíz", v => { datos.titulo = v || "La raíz"; guardar(); render(); });
+  editable($("#lema"), datos.lema || "", v => { datos.lema = v; guardar(); render(); });
+  editable($("#edAhora"), texto("ahora"), v => setTexto("ahora", v));
+  editable($("#edArbolT"), texto("arbol_t"), v => setTexto("arbol_t", v)); editable($("#edArbolD"), texto("arbol_d"), v => setTexto("arbol_d", v));
+  editable($("#edBandejaT"), texto("bandeja_t"), v => setTexto("bandeja_t", v)); editable($("#edBandejaD"), texto("bandeja_d"), v => setTexto("bandeja_d", v));
+  editable($("#edRevT"), texto("revision_t"), v => setTexto("revision_t", v)); editable($("#edRevD"), texto("revision_d"), v => setTexto("revision_d", v));
 }
 
 /* ---------- render ---------- */
 function render(){
-  if(datos){ $("#titulo").textContent = datos.titulo || "La raíz"; $("#lema").textContent = datos.lema || ""; $("#txtActualizado").textContent = "act. " + (datos.actualizado || "").replace("T"," ").slice(0,16); }
+  if(datos){ ["#titulo","#lema"].forEach(q => { const e = $(q); e.classList.remove("ed"); e.onclick = null; }); $("#titulo").textContent = datos.titulo || "La raíz"; $("#lema").textContent = datos.lema || ""; $("#txtActualizado").textContent = "act. " + (datos.actualizado || "").replace("T"," ").slice(0,16); }
   if(vista === "inicio"){ renderInicio(); return; }
   if(vista === "calendario"){ renderCalendario(); return; }
+  if(vista === "bandeja"){ renderBandeja(); return; }
+  if(vista === "revision"){ renderRevision(); return; }
   if(!datos){ $("#arbol").innerHTML = '<div class="aviso">Sin datos. Vincula raiz.json o conecta Dropbox.</div>'; return; }
   $("#titulo").textContent = datos.titulo || "La raíz";
   $("#lema").textContent = datos.lema || "";
@@ -467,7 +646,7 @@ function render(){
     for(const c of cs){
       const nh = hijos(c.id);
       h += `<div class="cuadro ${c.estado} ${c.id===selId?'sel':''}" draggable="true" data-id="${c.id}">
-        <div class="t">${esc(c.titulo)}</div>
+        <div class="t">${c.importante?'<span style="color:#C9A227">★</span> ':''}${esc(c.titulo)}</div>
         <div class="m">${c.plazo?('<span>▸ '+c.plazo+'</span>'):''}${c.estado==='activo'&&nh.length?('<span>'+nh.filter(x=>x.estado==='hecho').length+'/'+nh.length+' pasos</span>'):''}</div>
         ${c.notas&&c.notas.length?'<div class="hijos">✎'+c.notas.length+'</div>':''}
       </div>`;
@@ -489,8 +668,7 @@ function render(){
   // menú de raíz
   arbol.querySelectorAll("[data-menu]").forEach(b => b.onclick = (e) => { e.stopPropagation(); menuRaiz(b.dataset.menu, b); });
   instalarArrastre(arbol);
-  // diario
-  $("#diarioLista").innerHTML = (datos.diario||[]).slice(0,30).map(d => `<div class="nota"><div class="f">${d.fecha}</div>${esc(d.texto)}</div>`).join("") || '<div class="aviso">Nada apuntado todavía.</div>';
+  const copa = arbol.querySelector(".copa"); if(copa && obj) editable(copa, obj.titulo, v => { if(v){ obj.titulo = v; guardar(); } render(); });
   if(selId) renderPanel();
 }
 function abrir(id){ selId = id; $("#panel").classList.add("open"); $("#velo").classList.add("open"); render(); }
@@ -501,7 +679,7 @@ function renderPanel(){
   $("#pTitulo").textContent = n.titulo;
   const hs = hijos(n.id);
   const puedeActivar = n.estado === "disponible";
-  let h = `<div><span class="chip ${n.estado}">${n.estado}</span> ${n.plazo?'<span class="chip">plazo '+n.plazo+'</span>':''} ${n.cerrado?'<span class="chip hecho">hecho '+n.cerrado+'</span>':''}</div>`;
+  let h = `<div><button class="estrella ${n.importante?'on':''}" data-a="imp" title="Importante">★</button> <span class="chip ${n.estado}">${n.estado}</span> ${n.plazo?'<span class="chip">plazo '+n.plazo+'</span>':''} ${n.cerrado?'<span class="chip hecho">hecho '+n.cerrado+'</span>':''}</div>`;
   h += `<div class="acciones">
     ${puedeActivar?'<button class="btn act" data-a="activar">Activar</button>':''}
     ${n.estado==='activo'?'<button class="btn act" data-a="hecho">Marcar hecho</button>':''}
@@ -528,6 +706,7 @@ function renderPanel(){
   const c = $("#pCuerpo"); c.innerHTML = h;
   c.querySelectorAll("[data-a]").forEach(b => b.onclick = () => {
     const a = b.dataset.a;
+    if(a==="imp"){ toggleImportante(n.id, false); return; }
     if(a==="activar") activar(n.id);
     if(a==="hecho") marcarHecho(n.id);
     if(a==="reabrir") reabrir(n.id);
@@ -669,16 +848,17 @@ async function dbxSubir(txt){
 /* ---------- arranque ---------- */
 $("#bArchivo").onclick = vincularArchivo;
 $("#bDropbox").onclick = () => { if(localStorage.getItem(LS_RT)){ if(confirm("¿Desconectar Dropbox en este dispositivo?")){ localStorage.removeItem(LS_RT); location.reload(); } } else dbxConectar(); };
-$("#bRecargar").onclick = async () => { localStorage.removeItem(LS_DATOS); await cargarInicial(); render(); };
+$("#bRecargar").onclick = async () => { localStorage.removeItem(LS_DATOS); await cargarInicial(); if(datos) migrar(); render(); };
 $("#bDescargar").onclick = descargar;
 $("#bCerrar").onclick = cerrar; $("#velo").onclick = cerrar;
-$("#bDiario").onclick = () => { const t=$("#diarioTxt").value.trim(); if(t){ addDiario(t); $("#diarioTxt").value=""; } };
-$("#diarioTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bDiario").click(); });
+$("#bCapturar").onclick = () => { const t=$("#bandejaTxt").value.trim(); if(t){ capturar(t); $("#bandejaTxt").value=""; } };
+$("#bandejaTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bCapturar").click(); });
 
 (async () => {
   const q = new URLSearchParams(location.search);
   if(q.get("code")){ try{ await dbxCanjearCodigo(q.get("code")); toast("Dropbox conectado"); }catch(e){ alert("Error al conectar Dropbox: " + e.message); } history.replaceState(null,"",location.pathname); }
   await cargarInicial();
+  if(datos) migrar();
   ir(sessionStorage.getItem("raiz.vista") || "inicio", false);
   $("#bDropbox").textContent = localStorage.getItem(LS_RT) ? "Dropbox conectado" : "Conectar Dropbox";
   $("#avisoModo").textContent = CFG.appKey ? "" : "Sin appKey en config.js: la app guarda en este navegador y, si la vinculas, en raiz.json.";
