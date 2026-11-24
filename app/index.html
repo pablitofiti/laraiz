@@ -42,8 +42,26 @@ body{
 .btn:hover{ background:#fff; } .btn.sec{ border-color:var(--grafito); color:var(--grafito); } .btn.act{ background:var(--tinta); color:var(--papel); }
 .btn:disabled{ opacity:.4; cursor:default; }
 /* árbol */
-.arbol{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; align-items:start; }
-.objetivo{ grid-column:1/-1; display:grid; grid-template-columns:1fr; gap:8px; justify-items:center; margin-bottom:6px; }
+.objetivo{ display:grid; grid-template-columns:1fr; gap:8px; justify-items:center; margin-bottom:12px; }
+.tablero{ display:flex; gap:12px; align-items:flex-start; overflow-x:auto; padding-bottom:12px; scroll-snap-type:x proximity; }
+.tablero > *{ scroll-snap-align:start; }
+.raiz{ flex:0 0 272px; width:272px; }
+.raiz.arrastrando{ opacity:.4; }
+.raiz.sobre{ outline:2px dashed var(--ocre); outline-offset:3px; }
+.raiz h2 .titulo-raiz{ cursor:text; flex:1; }
+.raiz h2 input{ font:inherit; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:.05em; width:100%; border:1px solid var(--ocre); background:#fff; padding:2px 4px; }
+.raiz h2 .asa{ cursor:grab; color:var(--grafito); font-size:12px; padding:0 4px; }
+.raiz h2 .asa:active{ cursor:grabbing; }
+.raiz h2 .mas{ font:inherit; font-size:12px; border:0; background:none; color:var(--grafito); cursor:pointer; padding:0 4px; }
+.cuadro.arrastrando{ opacity:.4; }
+.cuadro.sobre-antes{ box-shadow:0 -3px 0 0 var(--ocre); }
+.cuadro.sobre-despues{ box-shadow:0 3px 0 0 var(--ocre); }
+.cuadros.sobre{ background:var(--ocreClaro); }
+.nuevaRaiz{ flex:0 0 220px; border:1.2px dashed var(--gris); background:transparent; color:var(--grafito); padding:10px; font:inherit; font-size:12px; text-transform:uppercase; letter-spacing:.03em; cursor:pointer; align-self:flex-start; }
+.nuevaRaiz:hover{ border-color:var(--tinta); color:var(--tinta); }
+.menuRaiz{ position:absolute; background:var(--papelAlt); border:1.2px solid var(--tinta); box-shadow:4px 4px 0 rgba(0,0,0,.12); z-index:25; display:flex; flex-direction:column; min-width:180px; }
+.menuRaiz button{ font:inherit; font-size:12px; text-align:left; padding:7px 10px; border:0; border-bottom:1px solid var(--linea); background:none; cursor:pointer; }
+.menuRaiz button:hover{ background:#fff; } .menuRaiz button.rojo{ color:var(--rojo); }
 .copa{ border:1.5px solid var(--tinta); background:var(--papelAlt); padding:10px 18px; text-align:center; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:16px; text-transform:uppercase; letter-spacing:.05em; max-width:520px; }
 .tronco{ border:1.2px solid var(--grafito); color:var(--grafito); padding:6px 14px; font-size:12px; text-align:center; max-width:460px; font-family:'IBM Plex Mono',monospace; }
 .raiz{ border:1.2px solid var(--tinta); background:var(--papelAlt); }
@@ -130,7 +148,7 @@ body{
       <div class="estado"><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div>
       <div id="txtActualizado">—</div>
       <div id="txtArchivo">raiz.json</div>
-      <div id="txtVersion">v1.2</div>
+      <div id="txtVersion">v1.3</div>
     </div>
   </div>
 
@@ -269,6 +287,25 @@ function eliminar(id){
   guardar(); render();
 }
 function descendientes(id){ const out = []; const pila = [id]; while(pila.length){ const p = pila.pop(); for(const h of datos.nodos.filter(x => x.padre === p)){ out.push(h); pila.push(h.id); } } return out; }
+function nuevaRaiz(titulo){
+  const rs = raices(); const base = "raiz-" + titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,20);
+  let id = base, k = 2; while(nodo(id)) id = base + "-" + (k++);
+  datos.nodos.push({ id, padre: "arbol", tipo: "raiz", titulo, estado: "disponible", orden: rs.length + 1, creado: hoy() });
+  guardar(); render();
+}
+function renombrar(id, titulo){ const n = nodo(id); if(titulo && titulo !== n.titulo){ n.titulo = titulo; guardar(); } render(); }
+function moverA(id, nuevoPadre, indice){
+  // mueve un nodo a otro padre (o al mismo) en la posición indice (0-based)
+  const n = nodo(id); if(!n || id === nuevoPadre) return;
+  if(descendientes(id).some(d => d.id === nuevoPadre)) return;
+  const origen = n.padre;
+  const destino = hijos(nuevoPadre).filter(h => h.id !== id);
+  destino.splice(Math.max(0, Math.min(indice, destino.length)), 0, n);
+  n.padre = nuevoPadre;
+  destino.forEach((h,k) => h.orden = k + 1);
+  if(origen !== nuevoPadre) hijos(origen).forEach((h,k) => h.orden = k + 1);
+  guardar(); render();
+}
 function addNota(id, texto){ const n=nodo(id); (n.notas = n.notas || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
 function addDiario(texto){ (datos.diario = datos.diario || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
 function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; guardar(); }
@@ -325,13 +362,14 @@ function render(){
   if(obj) h += `<div class="copa">${esc(obj.titulo)}</div>`;
   if(tronco) h += `<div class="tronco">${esc(tronco.titulo)}</div>`;
   h += '</div>';
+  h += '<div class="tablero" id="tablero">';
   for(const r of raices()){
     const cs = hijos(r.id);
     const hechos = cs.filter(c=>c.estado==="hecho").length;
-    h += `<section class="raiz"><h2><span>${esc(r.titulo)}</span><small>${hechos}/${cs.length}</small></h2><div class="cuadros">`;
+    h += `<section class="raiz" data-raiz="${r.id}"><h2 draggable="true" data-asa="${r.id}"><span class="asa" title="Arrastra para mover la columna">⋮⋮</span><span class="titulo-raiz" data-ren="${r.id}" title="Clic para renombrar">${esc(r.titulo)}</span><small>${hechos}/${cs.length}</small><button class="mas" data-menu="${r.id}" title="Menú">···</button></h2><div class="cuadros" data-lista="${r.id}">`;
     for(const c of cs){
       const nh = hijos(c.id);
-      h += `<div class="cuadro ${c.estado} ${c.id===selId?'sel':''}" data-id="${c.id}">
+      h += `<div class="cuadro ${c.estado} ${c.id===selId?'sel':''}" draggable="true" data-id="${c.id}">
         <div class="t">${esc(c.titulo)}</div>
         <div class="m">${c.plazo?('<span>▸ '+c.plazo+'</span>'):''}${c.estado==='activo'&&nh.length?('<span>'+nh.filter(x=>x.estado==='hecho').length+'/'+nh.length+' pasos</span>'):''}</div>
         ${c.notas&&c.notas.length?'<div class="hijos">✎'+c.notas.length+'</div>':''}
@@ -339,9 +377,21 @@ function render(){
     }
     h += `<button class="btn sec" data-nuevo="${r.id}">+ cuadro</button></div></section>`;
   }
+  h += `<button class="nuevaRaiz" id="bNuevaRaiz">+ raíz</button></div>`;
   arbol.innerHTML = h;
   arbol.querySelectorAll(".cuadro").forEach(el => el.onclick = () => abrir(el.dataset.id));
   arbol.querySelectorAll("[data-nuevo]").forEach(el => el.onclick = () => { const t = prompt("Título del nuevo cuadro"); if(t) nuevoHijo(el.dataset.nuevo, t); });
+  const bNR = $("#bNuevaRaiz"); if(bNR) bNR.onclick = () => { const t = prompt("Nombre de la nueva raíz"); if(t) nuevaRaiz(t.trim()); };
+  // renombrar raíz con clic en el título
+  arbol.querySelectorAll("[data-ren]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const id = el.dataset.ren; const inp = document.createElement("input"); inp.value = nodo(id).titulo;
+    el.replaceWith(inp); inp.focus(); inp.select();
+    let fin = false; const ok = () => { if(fin) return; fin = true; renombrar(id, inp.value.trim()); };
+    inp.onblur = ok; inp.onkeydown = (ev) => { if(ev.key==="Enter") ok(); if(ev.key==="Escape"){ fin = true; render(); } };
+  });
+  // menú de raíz
+  arbol.querySelectorAll("[data-menu]").forEach(b => b.onclick = (e) => { e.stopPropagation(); menuRaiz(b.dataset.menu, b); });
+  instalarArrastre(arbol);
   // diario
   $("#diarioLista").innerHTML = (datos.diario||[]).slice(0,30).map(d => `<div class="nota"><div class="f">${d.fecha}</div>${esc(d.texto)}</div>`).join("") || '<div class="aviso">Nada apuntado todavía.</div>';
   if(selId) renderPanel();
@@ -394,6 +444,53 @@ function renderPanel(){
   c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = (e) => { if(e.target.closest(".mini")) return; abrir(p.dataset.abrir); });
   c.querySelectorAll("[data-m]").forEach(b => b.onclick = (e) => { e.stopPropagation(); const [id,d] = b.dataset.m.split("|"); mover(id, +d); });
   c.querySelectorAll("[data-x]").forEach(b => b.onclick = (e) => { e.stopPropagation(); eliminar(b.dataset.x); });
+}
+function menuRaiz(id, ancla){
+  document.querySelectorAll(".menuRaiz").forEach(m => m.remove());
+  const r = nodo(id); const rs = raices(); const i = rs.findIndex(x => x.id === id);
+  const m = document.createElement("div"); m.className = "menuRaiz";
+  m.innerHTML = `<button data-o="ren">Renombrar</button><button data-o="izq" ${i===0?'disabled':''}>◀ Mover a la izquierda</button><button data-o="der" ${i===rs.length-1?'disabled':''}>Mover a la derecha ▶</button><button data-o="del" class="rojo">Eliminar raíz…</button>`;
+  const rect = ancla.getBoundingClientRect(); m.style.left = Math.min(rect.left, window.innerWidth - 200) + "px"; m.style.top = (rect.bottom + window.scrollY + 4) + "px";
+  document.body.appendChild(m);
+  m.querySelectorAll("button").forEach(b => b.onclick = () => {
+    const o = b.dataset.o; m.remove();
+    if(o==="ren"){ const t = prompt("Nuevo nombre", r.titulo); if(t) renombrar(id, t.trim()); }
+    if(o==="izq") mover(id, -1);
+    if(o==="der") mover(id, 1);
+    if(o==="del") eliminar(id);
+  });
+  setTimeout(() => document.addEventListener("click", () => m.remove(), { once:true }), 0);
+}
+function instalarArrastre(arbol){
+  let dragId = null, dragTipo = null;
+  // tarjetas
+  arbol.querySelectorAll(".cuadro[draggable]").forEach(el => {
+    el.addEventListener("dragstart", (e) => { dragId = el.dataset.id; dragTipo = "cuadro"; el.classList.add("arrastrando"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dragId); });
+    el.addEventListener("dragend", () => { dragId = null; dragTipo = null; limpiar(); });
+    el.addEventListener("dragover", (e) => { if(dragTipo !== "cuadro" || dragId === el.dataset.id) return; e.preventDefault(); const mitad = e.clientY < el.getBoundingClientRect().top + el.offsetHeight/2; el.classList.toggle("sobre-antes", mitad); el.classList.toggle("sobre-despues", !mitad); });
+    el.addEventListener("dragleave", () => el.classList.remove("sobre-antes","sobre-despues"));
+    el.addEventListener("drop", (e) => { if(dragTipo !== "cuadro") return; e.preventDefault(); e.stopPropagation();
+      const destino = nodo(el.dataset.id); const hs = hijos(destino.padre).filter(h => h.id !== dragId); let idx = hs.findIndex(h => h.id === destino.id);
+      if(!el.classList.contains("sobre-antes")) idx += 1; limpiar(); moverA(dragId, destino.padre, idx); });
+  });
+  // listas (soltar al final de la columna)
+  arbol.querySelectorAll(".cuadros[data-lista]").forEach(el => {
+    el.addEventListener("dragover", (e) => { if(dragTipo !== "cuadro") return; e.preventDefault(); el.classList.add("sobre"); });
+    el.addEventListener("dragleave", (e) => { if(!el.contains(e.relatedTarget)) el.classList.remove("sobre"); });
+    el.addEventListener("drop", (e) => { if(dragTipo !== "cuadro") return; e.preventDefault(); limpiar(); moverA(dragId, el.dataset.lista, 999); });
+  });
+  // columnas (asa en la cabecera)
+  arbol.querySelectorAll("h2[data-asa]").forEach(h2 => {
+    const col = h2.closest(".raiz");
+    h2.addEventListener("dragstart", (e) => { if(e.target.tagName === "INPUT"){ e.preventDefault(); return; } dragId = h2.dataset.asa; dragTipo = "raiz"; col.classList.add("arrastrando"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dragId); });
+    h2.addEventListener("dragend", () => { dragId = null; dragTipo = null; limpiar(); });
+    col.addEventListener("dragover", (e) => { if(dragTipo !== "raiz" || dragId === col.dataset.raiz) return; e.preventDefault(); col.classList.add("sobre"); });
+    col.addEventListener("dragleave", (e) => { if(!col.contains(e.relatedTarget)) col.classList.remove("sobre"); });
+    col.addEventListener("drop", (e) => { if(dragTipo !== "raiz") return; e.preventDefault(); e.stopPropagation();
+      const rs = raices().filter(r => r.id !== dragId); let idx = rs.findIndex(r => r.id === col.dataset.raiz);
+      if(e.clientX > col.getBoundingClientRect().left + col.offsetWidth/2) idx += 1; limpiar(); moverA(dragId, "arbol", idx); });
+  });
+  function limpiar(){ arbol.querySelectorAll(".arrastrando,.sobre,.sobre-antes,.sobre-despues").forEach(x => x.classList.remove("arrastrando","sobre","sobre-antes","sobre-despues")); }
 }
 function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
