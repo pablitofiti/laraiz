@@ -2,7 +2,7 @@
    - index.html: red primero (las actualizaciones aparecen solas)
    - resto (fuentes, iconos): caché primero
    - Dropbox: nunca se cachea */
-const CACHE = "raiz-v2";
+const CACHE = "raiz-v3";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -18,7 +18,7 @@ self.addEventListener("fetch", (e) => {
   if (url.pathname.endsWith("raiz.json")) return;
   const esDoc = e.request.mode === "navigate" || url.pathname.endsWith(".html") || url.pathname.endsWith("/") || url.pathname.endsWith("config.js");
   if (esDoc) {
-    e.respondWith(fetch(e.request).then((r) => { const c = r.clone(); caches.open(CACHE).then((k) => k.put(e.request, c)); return r; })
+    e.respondWith(fetch(e.request, { cache: "no-cache" }).then((r) => { const c = r.clone(); caches.open(CACHE).then((k) => k.put(e.request, c)); return r; })
       .catch(() => caches.match(e.request).then((r) => r || caches.match("./index.html"))));
   } else {
     e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request).then((resp) => { const c = resp.clone(); caches.open(CACHE).then((k) => k.put(e.request, c)); return resp; })));

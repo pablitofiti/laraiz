@@ -109,6 +109,7 @@ body{
       <div class="estado"><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div>
       <div id="txtActualizado">—</div>
       <div id="txtArchivo">raiz.json</div>
+      <div id="txtVersion">v1.1</div>
     </div>
   </div>
 
@@ -413,7 +414,7 @@ $("#diarioTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bDiar
   $("#bDropbox").textContent = localStorage.getItem(LS_RT) ? "Dropbox conectado" : "Conectar Dropbox";
   $("#avisoModo").textContent = CFG.appKey ? "" : "Sin appKey en config.js: la app guarda en este navegador y, si la vinculas, en raiz.json.";
   render();
-  if("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  if("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(()=>{});
 })();
 </script>
 </body>
