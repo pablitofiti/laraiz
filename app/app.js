@@ -525,6 +525,8 @@ $("#bEnviar").onclick = enviar; $("#chatTxt").addEventListener("keydown", e => {
 $("#chatFile").onchange = async (e) => { for(const f of e.target.files){ if(f.size > 20*1024*1024){ toast(f.name + " pesa más de 20 MB"); continue; } adjuntos.push(await leerAdjunto(f)); } e.target.value = ""; renderAdjuntos(); };
 $("#modeloChat").onchange = () => localStorage.setItem(LS_MODELO, $("#modeloChat").value);
 $("#bGuardarApi").onclick = () => { const k = $("#apiKey").value.trim(); if(k) localStorage.setItem(LS_API, k); else localStorage.removeItem(LS_API); localStorage.setItem(LS_MODELO, $("#modelo").value); toast(k ? "Clave guardada en este dispositivo" : "Clave borrada"); };
+$("#bVerApi").onclick = () => { const i = $("#apiKey"); i.type = i.type === "password" ? "text" : "password"; $("#bVerApi").textContent = i.type === "password" ? "Mostrar" : "Ocultar"; };
+$("#bCopiarApi").onclick = async () => { const k = localStorage.getItem(LS_API) || $("#apiKey").value; if(!k){ toast("No hay clave guardada"); return; } try{ await navigator.clipboard.writeText(k); toast("Clave copiada al portapapeles"); }catch(e){ $("#apiKey").type = "text"; $("#apiKey").select(); toast("Selecciónala y copia con Ctrl+C"); } };
 $("#bBorrarChat").onclick = () => { chatMsgs = []; localStorage.removeItem(LS_CHAT); renderChat(); toast("Conversación vaciada"); };
 $("#bArchivo").onclick = vincularArchivo; $("#bDescargar").onclick = descargar;
 $("#bDropbox").onclick = () => { if(localStorage.getItem(LS_RT)){ if(confirm("¿Desconectar Dropbox en este dispositivo?")){ localStorage.removeItem(LS_RT); location.reload(); } } else dbxConectar(); };
