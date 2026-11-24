@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>La raíz</title>
+<meta name="theme-color" content="#15181A" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" href="./icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="La raíz" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap');
+:root{
+  --papel:#E9EBE6; --papelAlt:#F3F4F0; --tinta:#15181A; --grafito:#616A6E; --linea:#C2C8C0; --fina:#D6DAD3;
+  --ocre:#9C6B2F; --ocreClaro:#E8D9BF; --amarillo:#F2D557; --amarilloClaro:#FBF0BF; --verde:#5E8C4A; --verdeClaro:#D9E6CF;
+  --rojo:#A5382C; --gris:#B9BFB9;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; }
+body{
+  background:var(--papel); color:var(--tinta);
+  font-family:'IBM Plex Sans','Helvetica Neue',sans-serif; font-size:14px; line-height:1.45;
+  background-image:linear-gradient(var(--fina) 1px,transparent 1px),linear-gradient(90deg,var(--fina) 1px,transparent 1px);
+  background-size:48px 48px,48px 48px; -webkit-tap-highlight-color:transparent;
+}
+.wrap{ max-width:1280px; margin:0 auto; padding:14px 12px 120px; }
+/* cajetín */
+.cajetin{ display:grid; grid-template-columns:1fr auto; border:1.5px solid var(--tinta); background:var(--papelAlt); margin-bottom:14px; }
+.cajetin .izq{ padding:10px 14px; border-right:1.5px solid var(--tinta); }
+.cajetin .der{ padding:10px 14px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grafito); display:flex; flex-direction:column; justify-content:center; gap:2px; min-width:200px; }
+.cajetin h1{ margin:0; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:700; font-size:22px; letter-spacing:.04em; text-transform:uppercase; }
+.cajetin .lema{ margin:2px 0 0; color:var(--grafito); font-size:12px; font-style:italic; }
+.estado{ display:inline-flex; align-items:center; gap:6px; }
+.estado .pto{ width:8px; height:8px; border-radius:50%; background:var(--gris); }
+.estado .pto.ok{ background:var(--verde); } .estado .pto.err{ background:var(--rojo); } .estado .pto.sync{ background:var(--amarillo); }
+/* barra */
+.barra{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.btn{ font:inherit; font-size:12px; letter-spacing:.03em; text-transform:uppercase; padding:6px 10px; border:1.2px solid var(--tinta); background:var(--papelAlt); color:var(--tinta); cursor:pointer; }
+.btn:hover{ background:#fff; } .btn.sec{ border-color:var(--grafito); color:var(--grafito); } .btn.act{ background:var(--tinta); color:var(--papel); }
+.btn:disabled{ opacity:.4; cursor:default; }
+/* árbol */
+.arbol{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; align-items:start; }
+.objetivo{ grid-column:1/-1; display:grid; grid-template-columns:1fr; gap:8px; justify-items:center; margin-bottom:6px; }
+.copa{ border:1.5px solid var(--tinta); background:var(--papelAlt); padding:10px 18px; text-align:center; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:16px; text-transform:uppercase; letter-spacing:.05em; max-width:520px; }
+.tronco{ border:1.2px solid var(--grafito); color:var(--grafito); padding:6px 14px; font-size:12px; text-align:center; max-width:460px; font-family:'IBM Plex Mono',monospace; }
+.raiz{ border:1.2px solid var(--tinta); background:var(--papelAlt); }
+.raiz h2{ margin:0; padding:8px 10px; font-family:'IBM Plex Sans Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-bottom:1.2px solid var(--tinta); display:flex; justify-content:space-between; align-items:center; }
+.raiz h2 small{ font-family:'IBM Plex Mono',monospace; font-weight:400; font-size:10px; color:var(--grafito); }
+.cuadros{ padding:8px; display:flex; flex-direction:column; gap:8px; }
+.cuadro{ border:1.2px solid var(--tinta); padding:8px 10px; cursor:pointer; position:relative; background:#fff; min-height:54px; }
+.cuadro .t{ font-size:13px; line-height:1.3; }
+.cuadro .m{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); margin-top:4px; display:flex; gap:10px; }
+.cuadro.bloqueado{ background:repeating-linear-gradient(45deg,#e4e6e1 0 6px,#eceee9 6px 12px); color:var(--grafito); border-color:var(--gris); border-style:dashed; }
+.cuadro.disponible{ background:#fff; }
+.cuadro.activo{ background:var(--amarilloClaro); border-width:2px; }
+.cuadro.activo::before{ content:""; position:absolute; left:-1px; top:-1px; bottom:-1px; width:6px; background:var(--amarillo); }
+.cuadro.hecho{ background:var(--verdeClaro); border-color:var(--verde); }
+.cuadro.hecho .t{ text-decoration:line-through; color:var(--grafito); }
+.cuadro.sel{ outline:2px solid var(--ocre); outline-offset:2px; }
+.cuadro .hijos{ position:absolute; right:8px; top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
+/* panel */
+.panel{ position:fixed; right:0; top:0; bottom:0; width:min(460px,100%); background:var(--papelAlt); border-left:1.5px solid var(--tinta); box-shadow:-8px 0 24px rgba(0,0,0,.12); transform:translateX(105%); transition:transform .18s; overflow:auto; z-index:20; }
+.panel.open{ transform:none; }
+.panel .cab{ padding:12px 14px; border-bottom:1.2px solid var(--tinta); display:flex; justify-content:space-between; align-items:flex-start; gap:8px; position:sticky; top:0; background:var(--papelAlt); }
+.panel .cab h3{ margin:0; font-size:15px; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; }
+.panel .cab .ruta{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
+.panel .cuerpo{ padding:12px 14px; display:flex; flex-direction:column; gap:14px; }
+.campo label{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--grafito); margin-bottom:3px; }
+.campo input,.campo textarea{ width:100%; font:inherit; font-size:13px; padding:6px 8px; border:1.2px solid var(--linea); background:#fff; color:var(--tinta); }
+.campo textarea{ min-height:64px; resize:vertical; }
+.chip{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; padding:2px 6px; border:1px solid var(--tinta); }
+.chip.activo{ background:var(--amarillo); } .chip.hecho{ background:var(--verde); color:#fff; border-color:var(--verde); } .chip.bloqueado{ color:var(--grafito); border-color:var(--gris); }
+.acciones{ display:flex; gap:6px; flex-wrap:wrap; }
+.lista{ display:flex; flex-direction:column; gap:6px; }
+.paso{ border:1px solid var(--linea); background:#fff; padding:6px 8px; display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
+.paso.activo{ background:var(--amarilloClaro); border-color:var(--tinta); }
+.paso.hecho{ background:var(--verdeClaro); } .paso.hecho .t{ text-decoration:line-through; color:var(--grafito); }
+.paso.bloqueado{ color:var(--grafito); border-style:dashed; }
+.paso .n{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); min-width:18px; }
+.nota{ border-left:3px solid var(--ocre); padding:4px 8px; background:#fff; font-size:13px; }
+.nota .f{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
+.velo{ position:fixed; inset:0; background:rgba(21,24,26,.25); z-index:15; display:none; }
+.velo.open{ display:block; }
+/* diario */
+.diario{ margin-top:18px; border:1.2px solid var(--tinta); background:var(--papelAlt); }
+.diario h2{ margin:0; padding:8px 10px; font-family:'IBM Plex Sans Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-bottom:1.2px solid var(--tinta); }
+.diario .cuerpo{ padding:10px; display:flex; flex-direction:column; gap:8px; }
+.diario .alta{ display:flex; gap:6px; }
+.diario .alta input{ flex:1; font:inherit; font-size:13px; padding:6px 8px; border:1.2px solid var(--linea); background:#fff; }
+.aviso{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grafito); padding:6px 0; }
+.toast{ position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--tinta); color:var(--papel); padding:8px 14px; font-size:12px; font-family:'IBM Plex Mono',monospace; z-index:30; display:none; }
+@media (max-width:640px){ .cajetin{ grid-template-columns:1fr; } .cajetin .izq{ border-right:0; border-bottom:1.5px solid var(--tinta); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="cajetin">
+    <div class="izq">
+      <h1 id="titulo">La raíz</h1>
+      <p class="lema" id="lema"></p>
+    </div>
+    <div class="der">
+      <div class="estado"><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div>
+      <div id="txtActualizado">—</div>
+      <div id="txtArchivo">raiz.json</div>
+    </div>
+  </div>
+
+  <div class="barra">
+    <button class="btn" id="bArchivo">Vincular raiz.json</button>
+    <button class="btn" id="bDropbox">Conectar Dropbox</button>
+    <button class="btn sec" id="bRecargar">Recargar</button>
+    <button class="btn sec" id="bDescargar">Descargar copia</button>
+    <span class="aviso" id="avisoModo"></span>
+  </div>
+
+  <div class="arbol" id="arbol"></div>
+
+  <div class="diario">
+    <h2>Diario</h2>
+    <div class="cuerpo">
+      <div class="alta"><input id="diarioTxt" placeholder="Apunta algo de hoy…" /><button class="btn" id="bDiario">Anotar</button></div>
+      <div class="lista" id="diarioLista"></div>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="velo"></div>
+<aside class="panel" id="panel">
+  <div class="cab">
+    <div>
+      <div class="ruta" id="pRuta"></div>
+      <h3 id="pTitulo"></h3>
+    </div>
+    <button class="btn sec" id="bCerrar">Cerrar</button>
+  </div>
+  <div class="cuerpo" id="pCuerpo"></div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script src="./config.js"></script>
+<script>
+/* ============================================================
+   LA RAÍZ · app de objetivos en árbol de habilidades
+   Datos: un único raiz.json. Reglas:
+   - estados: bloqueado | disponible | activo | hecho
+   - un solo activo por padre
+   - al marcar hecho, el siguiente 'orden' del mismo padre pasa a disponible
+   - solo los nodos activos se desglosan (tienen hijos)
+   ============================================================ */
+const CFG = window.RAIZ_CONFIG || {};
+const RUTA_DROPBOX = CFG.rutaArchivo || "/00_APP TD/raiz.json";
+const LS_DATOS = "raiz.datos", LS_RT = "raiz.dbx.refresh", LS_VERIF = "raiz.dbx.verifier";
+
+let datos = null;          // el documento
+let selId = null;          // nodo abierto en el panel
+let fileHandle = null;     // File System Access
+let modo = "local";        // local | archivo | dropbox
+let guardarTimer = null;
+
+const $ = (s) => document.querySelector(s);
+const hoy = () => new Date().toISOString().slice(0,10);
+const ahora = () => new Date().toISOString();
+function toast(m){ const t=$("#toast"); t.textContent=m; t.style.display="block"; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display="none",2200); }
+function setEstado(cls, txt){ const p=$("#ptoDatos"); p.className="pto "+cls; $("#txtDatos").textContent=txt; }
+
+/* ---------- modelo ---------- */
+const nodo = (id) => datos.nodos.find(n => n.id === id);
+const hijos = (id) => datos.nodos.filter(n => n.padre === id).sort((a,b)=>(a.orden||0)-(b.orden||0));
+const raices = () => hijos("arbol");
+function ruta(id){ const r=[]; let n=nodo(id); while(n){ r.unshift(n.titulo); n = n.padre ? nodo(n.padre) : null; } return r; }
+
+function activar(id){
+  const n = nodo(id); if(!n) return;
+  if(n.estado === "bloqueado"){ toast("Está bloqueado: termina antes el anterior"); return; }
+  const otro = hijos(n.padre).find(h => h.estado === "activo" && h.id !== id);
+  if(otro){ toast("Ya hay uno activo en esta raíz: " + otro.titulo); return; }
+  n.estado = "activo"; n.activado = hoy();
+  // el padre también pasa a activo
+  if(n.padre && nodo(n.padre) && nodo(n.padre).estado !== "activo" && nodo(n.padre).estado !== "hecho"){ nodo(n.padre).estado = "activo"; }
+  guardar(); render();
+}
+function marcarHecho(id){
+  const n = nodo(id); if(!n) return;
+  const pendientes = hijos(id).filter(h => h.estado !== "hecho");
+  if(pendientes.length && !confirm("Quedan " + pendientes.length + " pasos sin hacer. ¿Marcar hecho igualmente?")) return;
+  n.estado = "hecho"; n.cerrado = hoy();
+  // desbloquear el siguiente hermano
+  const hs = hijos(n.padre); const i = hs.findIndex(h => h.id === id);
+  const sig = hs.slice(i+1).find(h => h.estado === "bloqueado");
+  if(sig){
+    // un paso siguiente se activa solo; un cuadro siguiente queda disponible (lo activas tú)
+    sig.estado = (n.tipo === "paso") ? "activo" : "disponible";
+    if(sig.estado === "activo") sig.activado = hoy();
+    toast((sig.estado === "activo" ? "Siguiente paso: " : "Desbloqueado: ") + sig.titulo);
+  }
+  // si todos los hermanos están hechos, el padre queda disponible para cerrarse
+  guardar(); render();
+}
+function reabrir(id){ const n=nodo(id); n.estado="activo"; delete n.cerrado; guardar(); render(); }
+function nuevoHijo(padreId, titulo){
+  const p = nodo(padreId);
+  if(p.estado !== "activo"){ toast("Solo se desglosa un nodo activo"); return; }
+  const hs = hijos(padreId);
+  const base = padreId + "." + titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,24);
+  let id = base, k = 2; while(nodo(id)) id = base + "-" + (k++);
+  const tipo = p.tipo === "raiz" ? "cuadro" : "paso";
+  const estado = hs.length === 0 ? "activo" : (hs.every(h=>h.estado==="hecho") ? "disponible" : "bloqueado");
+  datos.nodos.push({ id, padre: padreId, tipo, titulo, estado, orden: hs.length + 1, creado: hoy() });
+  guardar(); render();
+}
+function addNota(id, texto){ const n=nodo(id); (n.notas = n.notas || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
+function addDiario(texto){ (datos.diario = datos.diario || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
+function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; guardar(); }
+
+/* ---------- render ---------- */
+function render(){
+  if(!datos){ $("#arbol").innerHTML = '<div class="aviso">Sin datos. Vincula raiz.json o conecta Dropbox.</div>'; return; }
+  $("#titulo").textContent = datos.titulo || "La raíz";
+  $("#lema").textContent = datos.lema || "";
+  $("#txtActualizado").textContent = "act. " + (datos.actualizado || "").replace("T"," ").slice(0,16);
+  const arbol = $("#arbol");
+  const obj = nodo("arbol"), tronco = nodo("tronco");
+  let h = '<div class="objetivo">';
+  if(obj) h += `<div class="copa">${esc(obj.titulo)}</div>`;
+  if(tronco) h += `<div class="tronco">${esc(tronco.titulo)}</div>`;
+  h += '</div>';
+  for(const r of raices()){
+    const cs = hijos(r.id);
+    const hechos = cs.filter(c=>c.estado==="hecho").length;
+    h += `<section class="raiz"><h2><span>${esc(r.titulo)}</span><small>${hechos}/${cs.length}</small></h2><div class="cuadros">`;
+    for(const c of cs){
+      const nh = hijos(c.id);
+      h += `<div class="cuadro ${c.estado} ${c.id===selId?'sel':''}" data-id="${c.id}">
+        <div class="t">${esc(c.titulo)}</div>
+        <div class="m">${c.plazo?('<span>▸ '+c.plazo+'</span>'):''}${c.estado==='activo'&&nh.length?('<span>'+nh.filter(x=>x.estado==='hecho').length+'/'+nh.length+' pasos</span>'):''}</div>
+        ${c.notas&&c.notas.length?'<div class="hijos">✎'+c.notas.length+'</div>':''}
+      </div>`;
+    }
+    h += `<button class="btn sec" data-nuevo="${r.id}">+ cuadro</button></div></section>`;
+  }
+  arbol.innerHTML = h;
+  arbol.querySelectorAll(".cuadro").forEach(el => el.onclick = () => abrir(el.dataset.id));
+  arbol.querySelectorAll("[data-nuevo]").forEach(el => el.onclick = () => { const t = prompt("Título del nuevo cuadro"); if(t) nuevoHijo(el.dataset.nuevo, t); });
+  // diario
+  $("#diarioLista").innerHTML = (datos.diario||[]).slice(0,30).map(d => `<div class="nota"><div class="f">${d.fecha}</div>${esc(d.texto)}</div>`).join("") || '<div class="aviso">Nada apuntado todavía.</div>';
+  if(selId) renderPanel();
+}
+function abrir(id){ selId = id; $("#panel").classList.add("open"); $("#velo").classList.add("open"); render(); }
+function cerrar(){ selId = null; $("#panel").classList.remove("open"); $("#velo").classList.remove("open"); render(); }
+function renderPanel(){
+  const n = nodo(selId); if(!n){ cerrar(); return; }
+  $("#pRuta").textContent = ruta(n.padre).join(" › ") + "  ·  " + n.id;
+  $("#pTitulo").textContent = n.titulo;
+  const hs = hijos(n.id);
+  const puedeActivar = n.estado === "disponible";
+  let h = `<div><span class="chip ${n.estado}">${n.estado}</span> ${n.plazo?'<span class="chip">plazo '+n.plazo+'</span>':''} ${n.cerrado?'<span class="chip hecho">hecho '+n.cerrado+'</span>':''}</div>`;
+  h += `<div class="acciones">
+    ${puedeActivar?'<button class="btn act" data-a="activar">Activar</button>':''}
+    ${n.estado==='activo'?'<button class="btn act" data-a="hecho">Marcar hecho</button>':''}
+    ${n.estado==='hecho'?'<button class="btn sec" data-a="reabrir">Reabrir</button>':''}
+  </div>`;
+  h += `<div class="campo"><label>Título</label><input data-e="titulo" value="${esc(n.titulo)}" /></div>`;
+  h += `<div class="campo"><label>Hecho cuando…</label><input data-e="hecho_cuando" value="${esc(n.hecho_cuando||'')}" placeholder="Criterio verificable" /></div>`;
+  h += `<div class="campo"><label>Plazo</label><input data-e="plazo" type="date" value="${n.plazo||''}" /></div>`;
+  // pasos
+  h += `<div><div class="campo"><label>${n.tipo==='raiz'?'Cuadros':'Pasos'} (${hs.filter(x=>x.estado==='hecho').length}/${hs.length})</label></div><div class="lista">`;
+  hs.forEach((p,i) => { h += `<div class="paso ${p.estado}" data-abrir="${p.id}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="t">${esc(p.titulo)}</span></div>`; });
+  h += `</div>`;
+  if(n.estado === "activo") h += `<div class="acciones" style="margin-top:6px"><input id="nuevoPaso" placeholder="Nuevo paso…" style="flex:1;font:inherit;font-size:13px;padding:6px 8px;border:1.2px solid var(--linea)" /><button class="btn" data-a="nuevoPaso">+ paso</button></div>`;
+  else h += `<div class="aviso">Solo un nodo activo se desglosa.</div>`;
+  h += `</div>`;
+  // notas
+  h += `<div><div class="campo"><label>Notas</label><textarea id="nuevaNota" placeholder="Apunta y pulsa Guardar nota"></textarea></div><div class="acciones"><button class="btn" data-a="nota">Guardar nota</button></div><div class="lista" style="margin-top:8px">`;
+  h += (n.notas||[]).map(x => `<div class="nota"><div class="f">${x.fecha}</div>${esc(x.texto)}</div>`).join("");
+  h += `</div></div>`;
+  const c = $("#pCuerpo"); c.innerHTML = h;
+  c.querySelectorAll("[data-a]").forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if(a==="activar") activar(n.id);
+    if(a==="hecho") marcarHecho(n.id);
+    if(a==="reabrir") reabrir(n.id);
+    if(a==="nota"){ const t=$("#nuevaNota").value.trim(); if(t) addNota(n.id, t); }
+    if(a==="nuevoPaso"){ const t=$("#nuevoPaso").value.trim(); if(t) nuevoHijo(n.id, t); }
+  });
+  c.querySelectorAll("[data-e]").forEach(i => i.onchange = () => { editar(n.id, i.dataset.e, i.value.trim()); render(); });
+  c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = () => abrir(p.dataset.abrir));
+}
+function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---------- persistencia ---------- */
+function serializar(){ datos.actualizado = ahora().slice(0,19) + "+01:00"; return JSON.stringify(datos, null, 2); }
+function guardar(){
+  const txt = serializar();
+  localStorage.setItem(LS_DATOS, txt);
+  clearTimeout(guardarTimer);
+  guardarTimer = setTimeout(async () => {
+    try{
+      if(modo === "dropbox"){ setEstado("sync","subiendo…"); await dbxSubir(txt); setEstado("ok","Dropbox"); }
+      else if(modo === "archivo" && fileHandle){ const w = await fileHandle.createWritable(); await w.write(txt); await w.close(); setEstado("ok","raiz.json local"); }
+      else setEstado("", "solo en este navegador");
+    }catch(e){ console.error(e); setEstado("err","error al guardar"); toast("No se pudo guardar: " + e.message); }
+  }, 600);
+}
+async function cargarInicial(){
+  // 1) Dropbox si hay token; 2) copia en localStorage; 3) ../raiz.json servido en local
+  if(CFG.appKey && localStorage.getItem(LS_RT)){
+    try{ modo="dropbox"; setEstado("sync","leyendo Dropbox…"); datos = JSON.parse(await dbxBajar()); setEstado("ok","Dropbox"); localStorage.setItem(LS_DATOS, JSON.stringify(datos)); return; }
+    catch(e){ console.error(e); setEstado("err","Dropbox: " + e.message); }
+  }
+  const ls = localStorage.getItem(LS_DATOS);
+  if(ls){ datos = JSON.parse(ls); modo = fileHandle ? "archivo" : "local"; setEstado("", "copia local"); return; }
+  try{ const r = await fetch("../raiz.json", {cache:"no-store"}); if(r.ok){ datos = await r.json(); localStorage.setItem(LS_DATOS, JSON.stringify(datos)); setEstado("", "leído ../raiz.json (solo lectura)"); return; } }catch(e){}
+  setEstado("err","sin datos");
+}
+async function vincularArchivo(){
+  if(!window.showOpenFilePicker){ toast("Tu navegador no permite escribir archivos; usa Chrome/Edge o Dropbox"); return; }
+  try{
+    const [h] = await window.showOpenFilePicker({ types:[{description:"raiz.json", accept:{"application/json":[".json"]}}] });
+    fileHandle = h; const f = await h.getFile(); datos = JSON.parse(await f.text());
+    modo = "archivo"; localStorage.setItem(LS_DATOS, JSON.stringify(datos)); setEstado("ok","raiz.json local"); $("#txtArchivo").textContent = f.name; render();
+  }catch(e){ if(e.name!=="AbortError") toast(e.message); }
+}
+function descargar(){ const b = new Blob([serializar()],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="raiz.json"; a.click(); }
+
+/* ---------- Dropbox (OAuth PKCE, sin secreto) ---------- */
+function b64url(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+async function sha256(s){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); }
+function redirectUri(){ return location.origin + location.pathname; }
+async function dbxConectar(){
+  if(!CFG.appKey){ toast("Falta appKey en config.js"); return; }
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  localStorage.setItem(LS_VERIF, verifier);
+  const challenge = b64url(await sha256(verifier));
+  const u = new URL("https://www.dropbox.com/oauth2/authorize");
+  u.search = new URLSearchParams({ client_id: CFG.appKey, response_type:"code", code_challenge: challenge, code_challenge_method:"S256", token_access_type:"offline", redirect_uri: redirectUri() }).toString();
+  location.href = u.toString();
+}
+async function dbxCanjearCodigo(code){
+  const verifier = localStorage.getItem(LS_VERIF);
+  const r = await fetch("https://api.dropboxapi.com/oauth2/token", { method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body: new URLSearchParams({ code, grant_type:"authorization_code", client_id: CFG.appKey, code_verifier: verifier, redirect_uri: redirectUri() }) });
+  const j = await r.json(); if(!r.ok) throw new Error(j.error_description || JSON.stringify(j));
+  localStorage.setItem(LS_RT, j.refresh_token); localStorage.removeItem(LS_VERIF);
+}
+let accessToken = null, accessExp = 0;
+async function dbxToken(){
+  if(accessToken && Date.now() < accessExp - 60000) return accessToken;
+  const r = await fetch("https://api.dropboxapi.com/oauth2/token", { method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body: new URLSearchParams({ grant_type:"refresh_token", refresh_token: localStorage.getItem(LS_RT), client_id: CFG.appKey }) });
+  const j = await r.json(); if(!r.ok){ if(j.error==="invalid_grant") localStorage.removeItem(LS_RT); throw new Error(j.error_description || j.error); }
+  accessToken = j.access_token; accessExp = Date.now() + (j.expires_in||14400)*1000; return accessToken;
+}
+async function dbxBajar(){
+  const t = await dbxToken();
+  const r = await fetch("https://content.dropboxapi.com/2/files/download", { method:"POST", headers:{ Authorization:"Bearer "+t, "Dropbox-API-Arg": JSON.stringify({ path: RUTA_DROPBOX }) } });
+  if(!r.ok) throw new Error("descarga " + r.status + " " + (await r.text()).slice(0,120));
+  return r.text();
+}
+async function dbxSubir(txt){
+  const t = await dbxToken();
+  const r = await fetch("https://content.dropboxapi.com/2/files/upload", { method:"POST", headers:{ Authorization:"Bearer "+t, "Content-Type":"application/octet-stream", "Dropbox-API-Arg": JSON.stringify({ path: RUTA_DROPBOX, mode:"overwrite", mute:true }) }, body: txt });
+  if(!r.ok) throw new Error("subida " + r.status + " " + (await r.text()).slice(0,120));
+}
+
+/* ---------- arranque ---------- */
+$("#bArchivo").onclick = vincularArchivo;
+$("#bDropbox").onclick = () => { if(localStorage.getItem(LS_RT)){ if(confirm("¿Desconectar Dropbox en este dispositivo?")){ localStorage.removeItem(LS_RT); location.reload(); } } else dbxConectar(); };
+$("#bRecargar").onclick = async () => { localStorage.removeItem(LS_DATOS); await cargarInicial(); render(); };
+$("#bDescargar").onclick = descargar;
+$("#bCerrar").onclick = cerrar; $("#velo").onclick = cerrar;
+$("#bDiario").onclick = () => { const t=$("#diarioTxt").value.trim(); if(t){ addDiario(t); $("#diarioTxt").value=""; } };
+$("#diarioTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bDiario").click(); });
+
+(async () => {
+  const q = new URLSearchParams(location.search);
+  if(q.get("code")){ try{ await dbxCanjearCodigo(q.get("code")); toast("Dropbox conectado"); }catch(e){ alert("Error al conectar Dropbox: " + e.message); } history.replaceState(null,"",location.pathname); }
+  await cargarInicial();
+  $("#bDropbox").textContent = localStorage.getItem(LS_RT) ? "Dropbox conectado" : "Conectar Dropbox";
+  $("#avisoModo").textContent = CFG.appKey ? "" : "Sin appKey en config.js: la app guarda en este navegador y, si la vinculas, en raiz.json.";
+  render();
+  if("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("./sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
