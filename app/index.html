@@ -79,6 +79,9 @@ body{
 .paso.activo{ background:var(--amarilloClaro); border-color:var(--tinta); }
 .paso.hecho{ background:var(--verdeClaro); } .paso.hecho .t{ text-decoration:line-through; color:var(--grafito); }
 .paso.bloqueado{ color:var(--grafito); border-style:dashed; }
+.paso .mini{ display:flex; gap:2px; margin-left:auto; }
+.paso .mini button{ font:inherit; font-size:11px; line-height:1; padding:3px 5px; border:1px solid var(--linea); background:var(--papelAlt); color:var(--grafito); cursor:pointer; }
+.paso .mini button:hover{ border-color:var(--tinta); color:var(--tinta); }
 .paso .n{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); min-width:18px; }
 .nota{ border-left:3px solid var(--ocre); padding:4px 8px; background:#fff; font-size:13px; }
 .nota .f{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); }
@@ -212,6 +215,25 @@ function nuevoHijo(padreId, titulo){
   datos.nodos.push({ id, padre: padreId, tipo, titulo, estado, orden: hs.length + 1, creado: hoy() });
   guardar(); render();
 }
+function mover(id, delta){
+  const n = nodo(id); const hs = hijos(n.padre); const i = hs.findIndex(h => h.id === id); const j = i + delta;
+  if(j < 0 || j >= hs.length) return;
+  hs.forEach((h,k) => h.orden = k + 1);
+  const o = hs[i].orden; hs[i].orden = hs[j].orden; hs[j].orden = o;
+  guardar(); render();
+}
+function eliminar(id){
+  const n = nodo(id); const desc = descendientes(id);
+  const msg = "¿Eliminar «" + n.titulo + "»" + (desc.length ? " y sus " + desc.length + " hijos" : "") + "? No se puede deshacer.";
+  if(!confirm(msg)) return;
+  const quitar = new Set([id, ...desc.map(d => d.id)]);
+  datos.nodos = datos.nodos.filter(x => !quitar.has(x.id));
+  hijos(n.padre).forEach((h,k) => h.orden = k + 1);
+  if(selId === id) selId = n.padre && nodo(n.padre) && nodo(n.padre).tipo !== "objetivo" ? n.padre : null;
+  if(!selId) { $("#panel").classList.remove("open"); $("#velo").classList.remove("open"); }
+  guardar(); render();
+}
+function descendientes(id){ const out = []; const pila = [id]; while(pila.length){ const p = pila.pop(); for(const h of datos.nodos.filter(x => x.padre === p)){ out.push(h); pila.push(h.id); } } return out; }
 function addNota(id, texto){ const n=nodo(id); (n.notas = n.notas || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
 function addDiario(texto){ (datos.diario = datos.diario || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
 function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; guardar(); }
@@ -262,13 +284,17 @@ function renderPanel(){
     ${puedeActivar?'<button class="btn act" data-a="activar">Activar</button>':''}
     ${n.estado==='activo'?'<button class="btn act" data-a="hecho">Marcar hecho</button>':''}
     ${n.estado==='hecho'?'<button class="btn sec" data-a="reabrir">Reabrir</button>':''}
+    <button class="btn sec" data-a="subir" title="Subir">▲</button>
+    <button class="btn sec" data-a="bajar" title="Bajar">▼</button>
+    <button class="btn sec" data-a="eliminar" style="margin-left:auto;color:var(--rojo);border-color:var(--rojo)">Eliminar</button>
   </div>`;
   h += `<div class="campo"><label>Título</label><input data-e="titulo" value="${esc(n.titulo)}" /></div>`;
   h += `<div class="campo"><label>Hecho cuando…</label><input data-e="hecho_cuando" value="${esc(n.hecho_cuando||'')}" placeholder="Criterio verificable" /></div>`;
   h += `<div class="campo"><label>Plazo</label><input data-e="plazo" type="date" value="${n.plazo||''}" /></div>`;
   // pasos
   h += `<div><div class="campo"><label>${n.tipo==='raiz'?'Cuadros':'Pasos'} (${hs.filter(x=>x.estado==='hecho').length}/${hs.length})</label></div><div class="lista">`;
-  hs.forEach((p,i) => { h += `<div class="paso ${p.estado}" data-abrir="${p.id}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="t">${esc(p.titulo)}</span></div>`; });
+  hs.forEach((p,i) => { h += `<div class="paso ${p.estado}" data-abrir="${p.id}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="t" style="flex:1">${esc(p.titulo)}</span>
+    <span class="mini"><button data-m="${p.id}|-1" title="Subir">▲</button><button data-m="${p.id}|1" title="Bajar">▼</button><button data-x="${p.id}" title="Eliminar">✕</button></span></div>`; });
   h += `</div>`;
   if(n.estado === "activo") h += `<div class="acciones" style="margin-top:6px"><input id="nuevoPaso" placeholder="Nuevo paso…" style="flex:1;font:inherit;font-size:13px;padding:6px 8px;border:1.2px solid var(--linea)" /><button class="btn" data-a="nuevoPaso">+ paso</button></div>`;
   else h += `<div class="aviso">Solo un nodo activo se desglosa.</div>`;
@@ -283,11 +309,16 @@ function renderPanel(){
     if(a==="activar") activar(n.id);
     if(a==="hecho") marcarHecho(n.id);
     if(a==="reabrir") reabrir(n.id);
+    if(a==="subir") mover(n.id, -1);
+    if(a==="bajar") mover(n.id, 1);
+    if(a==="eliminar") eliminar(n.id);
     if(a==="nota"){ const t=$("#nuevaNota").value.trim(); if(t) addNota(n.id, t); }
     if(a==="nuevoPaso"){ const t=$("#nuevoPaso").value.trim(); if(t) nuevoHijo(n.id, t); }
   });
   c.querySelectorAll("[data-e]").forEach(i => i.onchange = () => { editar(n.id, i.dataset.e, i.value.trim()); render(); });
-  c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = () => abrir(p.dataset.abrir));
+  c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = (e) => { if(e.target.closest(".mini")) return; abrir(p.dataset.abrir); });
+  c.querySelectorAll("[data-m]").forEach(b => b.onclick = (e) => { e.stopPropagation(); const [id,d] = b.dataset.m.split("|"); mover(id, +d); });
+  c.querySelectorAll("[data-x]").forEach(b => b.onclick = (e) => { e.stopPropagation(); eliminar(b.dataset.x); });
 }
 function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
