@@ -95,6 +95,27 @@ body{
 .diario .alta input{ flex:1; font:inherit; font-size:13px; padding:6px 8px; border:1.2px solid var(--linea); background:#fff; }
 .aviso{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grafito); padding:6px 0; }
 .toast{ position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--tinta); color:var(--papel); padding:8px 14px; font-size:12px; font-family:'IBM Plex Mono',monospace; z-index:30; display:none; }
+/* vistas */
+.vista{ display:none; } .vista.on{ display:block; }
+.nav{ display:flex; gap:6px; align-items:center; margin-bottom:12px; }
+.nav .titulo{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:700; font-size:16px; letter-spacing:.05em; text-transform:uppercase; margin-left:6px; }
+.indice{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+.lamina{ border:1.5px solid var(--tinta); background:var(--papelAlt); min-height:150px; padding:12px 14px; cursor:pointer; position:relative; display:flex; flex-direction:column; }
+.lamina:hover{ background:#fff; }
+.lamina .num{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); letter-spacing:.08em; }
+.lamina h3{ margin:4px 0 6px; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:700; font-size:20px; letter-spacing:.04em; text-transform:uppercase; }
+.lamina p{ margin:0; color:var(--grafito); font-size:12px; }
+.lamina .pie{ margin-top:auto; padding-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grafito); border-top:1px solid var(--linea); }
+.lamina.ahora{ grid-column:1/-1; cursor:default; }
+.lamina.ahora:hover{ background:var(--papelAlt); }
+.ahoraLista{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; margin-top:6px; }
+.ahoraItem{ border:1.2px solid var(--tinta); background:var(--amarilloClaro); padding:8px 10px; cursor:pointer; position:relative; }
+.ahoraItem::before{ content:""; position:absolute; left:-1px; top:-1px; bottom:-1px; width:6px; background:var(--amarillo); }
+.ahoraItem .r{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grafito); text-transform:uppercase; letter-spacing:.06em; }
+.ahoraItem .t{ font-size:13px; margin-top:2px; }
+.ahoraItem .h{ font-size:11px; color:var(--grafito); margin-top:3px; font-style:italic; }
+.lamina.vacia{ border-style:dashed; border-color:var(--gris); color:var(--grafito); cursor:default; justify-content:center; align-items:center; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; }
+.lamina.vacia:hover{ background:var(--papelAlt); }
 @media (max-width:640px){ .cajetin{ grid-template-columns:1fr; } .cajetin .izq{ border-right:0; border-bottom:1.5px solid var(--tinta); } }
 </style>
 </head>
@@ -109,10 +130,18 @@ body{
       <div class="estado"><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div>
       <div id="txtActualizado">—</div>
       <div id="txtArchivo">raiz.json</div>
-      <div id="txtVersion">v1.1</div>
+      <div id="txtVersion">v1.2</div>
     </div>
   </div>
 
+  <!-- INICIO -->
+  <section class="vista" id="vInicio">
+    <div class="indice" id="indice"></div>
+  </section>
+
+  <!-- ÁRBOL -->
+  <section class="vista" id="vArbol">
+  <div class="nav"><button class="btn sec" data-ir="inicio">◀ Inicio</button><span class="titulo">El árbol</span></div>
   <div class="barra">
     <button class="btn" id="bArchivo">Vincular raiz.json</button>
     <button class="btn" id="bDropbox">Conectar Dropbox</button>
@@ -122,7 +151,11 @@ body{
   </div>
 
   <div class="arbol" id="arbol"></div>
+  </section>
 
+  <!-- DIARIO -->
+  <section class="vista" id="vDiario">
+  <div class="nav"><button class="btn sec" data-ir="inicio">◀ Inicio</button><span class="titulo">Diario</span></div>
   <div class="diario">
     <h2>Diario</h2>
     <div class="cuerpo">
@@ -130,6 +163,7 @@ body{
       <div class="lista" id="diarioLista"></div>
     </div>
   </div>
+  </section>
 </div>
 
 <div class="velo" id="velo"></div>
@@ -239,8 +273,48 @@ function addNota(id, texto){ const n=nodo(id); (n.notas = n.notas || []).unshift
 function addDiario(texto){ (datos.diario = datos.diario || []).unshift({ fecha: hoy(), texto }); guardar(); render(); }
 function editar(id, campo, valor){ const n=nodo(id); if(valor==="" ) delete n[campo]; else n[campo]=valor; guardar(); }
 
+/* ---------- vistas ---------- */
+const VISTAS = { inicio:"vInicio", arbol:"vArbol", diario:"vDiario" };
+let vista = "inicio";
+function ir(v, guardarEstado=true){
+  if(!VISTAS[v]) v = "inicio";
+  vista = v;
+  document.querySelectorAll(".vista").forEach(el => el.classList.toggle("on", el.id === VISTAS[v]));
+  if(guardarEstado) sessionStorage.setItem("raiz.vista", v);
+  window.scrollTo(0,0);
+  render();
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-ir]"); if(b) ir(b.dataset.ir); });
+function activosHoy(){
+  // el nodo activo más profundo de cada raíz
+  const out = [];
+  for(const r of raices()){
+    let n = hijos(r.id).find(c => c.estado === "activo"); if(!n) continue;
+    let p; while((p = hijos(n.id).find(c => c.estado === "activo"))) n = p;
+    out.push({ raiz: r, nodo: n });
+  }
+  return out;
+}
+function renderInicio(){
+  const el = $("#indice"); if(!datos){ el.innerHTML = '<div class="aviso">Sin datos. Entra en El árbol y vincula raiz.json o conecta Dropbox.</div>'; return; }
+  const act = activosHoy();
+  const total = datos.nodos.filter(n => n.tipo === "cuadro").length, hechos = datos.nodos.filter(n => n.tipo === "cuadro" && n.estado === "hecho").length;
+  const ultimo = (datos.diario||[])[0];
+  let h = `<div class="lamina ahora"><div class="num">00 · AHORA</div><h3>Lo que toca</h3>`;
+  h += act.length ? `<div class="ahoraLista">` + act.map(a => `<div class="ahoraItem" data-abrirnodo="${a.nodo.id}"><div class="r">${esc(a.raiz.titulo)}</div><div class="t">${esc(a.nodo.titulo)}</div>${a.nodo.hecho_cuando?'<div class="h">hecho cuando: '+esc(a.nodo.hecho_cuando)+'</div>':''}</div>`).join("") + `</div>`
+                   : `<p>Nada activo. Entra en el árbol y activa un cuadro.</p>`;
+  h += `</div>`;
+  h += `<div class="lamina" data-ir="arbol"><div class="num">01</div><h3>El árbol</h3><p>Objetivo, raíces, cuadros y pasos. Lo que se desbloquea al terminar lo anterior.</p><div class="pie">${hechos}/${total} cuadros hechos · ${act.length} activo${act.length===1?'':'s'}</div></div>`;
+  h += `<div class="lamina" data-ir="diario"><div class="num">02</div><h3>Diario</h3><p>Lo que apuntas cada día, sin orden ni obligación.</p><div class="pie">${ultimo ? ultimo.fecha + ' · ' + esc(ultimo.texto).slice(0,60) : 'sin entradas'}</div></div>`;
+  h += `<div class="lamina vacia">03 · lámina por definir</div>`;
+  el.innerHTML = h;
+  el.querySelectorAll("[data-abrirnodo]").forEach(x => x.onclick = () => { ir("arbol"); abrir(x.dataset.abrirnodo); });
+}
+
 /* ---------- render ---------- */
 function render(){
+  if(datos){ $("#titulo").textContent = datos.titulo || "La raíz"; $("#lema").textContent = datos.lema || ""; $("#txtActualizado").textContent = "act. " + (datos.actualizado || "").replace("T"," ").slice(0,16); }
+  if(vista === "inicio"){ renderInicio(); return; }
   if(!datos){ $("#arbol").innerHTML = '<div class="aviso">Sin datos. Vincula raiz.json o conecta Dropbox.</div>'; return; }
   $("#titulo").textContent = datos.titulo || "La raíz";
   $("#lema").textContent = datos.lema || "";
@@ -411,6 +485,7 @@ $("#diarioTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bDiar
   const q = new URLSearchParams(location.search);
   if(q.get("code")){ try{ await dbxCanjearCodigo(q.get("code")); toast("Dropbox conectado"); }catch(e){ alert("Error al conectar Dropbox: " + e.message); } history.replaceState(null,"",location.pathname); }
   await cargarInicial();
+  ir(sessionStorage.getItem("raiz.vista") || "inicio", false);
   $("#bDropbox").textContent = localStorage.getItem(LS_RT) ? "Dropbox conectado" : "Conectar Dropbox";
   $("#avisoModo").textContent = CFG.appKey ? "" : "Sin appKey en config.js: la app guarda en este navegador y, si la vinculas, en raiz.json.";
   render();
