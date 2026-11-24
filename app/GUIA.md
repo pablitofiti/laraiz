@@ -24,3 +24,9 @@
 
 ## Archivo
 Todo vive en `raiz.json`. Claude puede leerlo y reescribirlo desde el chat con Dropbox conectado para desglosar nodos.
+
+## Claude dentro (v2.0)
+1. Crea una clave en https://platform.claude.com/settings/keys y carga saldo en Billing.
+2. En la app: Ajustes → Claude → pega la clave → Guardar. Queda solo en ese dispositivo.
+3. Botón "Claude" (arriba a la derecha, o en la barra del móvil). Escribe, adjunta PDF/imagen si hace falta, Enviar (Ctrl+Enter).
+4. Si propone cambios, los ves en una lista y pulsas Aplicar o Descartar. Nada se escribe sin tu ok.
