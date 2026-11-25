@@ -25,7 +25,7 @@ body{ background:var(--papel); color:var(--tinta); font-family:Figtree,system-ui
 .mono{ font-family:'IBM Plex Mono',monospace; }
 a{ color:var(--tinta); }
 button{ font:inherit; }
-.wrap{ max-width:1240px; margin:0 auto; padding:20px 24px 100px; }
+.wrap{ max-width:1840px; margin:0 auto; padding:20px 32px 100px; }
 /* cabecera */
 .cab{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:1px solid var(--tinta); padding-bottom:12px; margin-bottom:18px; gap:16px; }
 .cab .fecha{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; color:var(--grisClaro); text-transform:uppercase; }
@@ -112,7 +112,8 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
 .copa{ font-size:22px; font-weight:600; letter-spacing:-.01em; text-align:center; }
 .tronco{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grisClaro); text-align:center; }
 .tablero{ display:flex; gap:14px; align-items:flex-start; overflow-x:auto; padding-bottom:12px; }
-.raiz{ flex:0 0 250px; width:250px; }
+.raiz{ flex:1 1 230px; min-width:230px; max-width:380px; }
+.tablero{ min-height:calc(100vh - 300px); } .cuadros{ min-height:120px; }
 .raiz.arrastrando{ opacity:.4; } .raiz.sobre{ outline:2px dashed var(--acento); outline-offset:4px; border-radius:var(--radio); }
 .raiz h2{ margin:0 0 8px; padding-bottom:6px; border-bottom:2px solid var(--tinta); font-size:17px; font-weight:600; letter-spacing:-.01em; display:flex; align-items:center; gap:6px; }
 .raiz h2 .titulo-raiz{ cursor:text; flex:1; } .raiz h2 small{ font-family:'IBM Plex Mono',monospace; font-weight:400; font-size:10px; color:var(--grisClaro); }
@@ -203,8 +204,91 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
 .chat .adjuntos{ display:flex; gap:6px; flex-wrap:wrap; } .chat .adjuntos span{ font-family:'IBM Plex Mono',monospace; font-size:10px; background:var(--suave); padding:3px 8px; border-radius:10px; }
 .chat .adjuntos span b{ cursor:pointer; margin-left:6px; font-weight:400; }
 .pensando{ align-self:flex-start; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grisClaro); }
+/* ---------- 2.1 ---------- */
+.avisoGlobal{ display:none; margin:-6px 0 16px; padding:10px 14px; border-radius:var(--radio); background:var(--rojoClaro); color:var(--tinta); font-size:13px; align-items:center; gap:10px; }
+.avisoGlobal.on{ display:flex; } .avisoGlobal .btn{ margin-left:auto; }
+.toast{ display:none; align-items:center; gap:12px; } .toast.on{ display:flex; } .toast button{ background:none; border:1px solid var(--papel); color:var(--papel); border-radius:4px; font:inherit; font-size:11px; padding:3px 8px; cursor:pointer; }
+/* portada 2.1 */
+.p21{ display:flex; flex-direction:column; gap:20px; }
+.p21 .arriba{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,2.2fr); gap:16px; align-items:stretch; }
+.colAt{ background:var(--blanco); border:1px solid var(--linea); border-radius:var(--radio); padding:12px 14px; border-top:3px solid var(--tinta); display:flex; flex-direction:column; min-height:340px; }
+.colAt.imp{ border-top-color:var(--acento); } .colAt.ven{ border-top-color:var(--rojo); } .colAt.pro{ border-top-color:var(--tinta); }
+.colAt h4{ margin:0 0 8px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:400; letter-spacing:.12em; text-transform:uppercase; color:var(--grisClaro); display:flex; justify-content:space-between; }
+.colAt .num{ font-size:34px; font-weight:600; line-height:1; letter-spacing:-.02em; margin-bottom:10px; }
+.colAt .it{ font-size:13px; line-height:1.35; padding:7px 0; cursor:pointer; border-top:1px solid var(--linea); display:flex; gap:8px; align-items:flex-start; }
+.colAt .it:hover{ color:var(--gris); } .colAt .it i{ width:7px; height:7px; border-radius:4px; flex:0 0 auto; margin-top:5px; }
+.colAt .it small{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); }
+.colAt .nada{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--lineaFuerte); }
+.cal.medio .d{ min-height:46px; } .cal.medio .d .n{ width:28px; height:28px; line-height:28px; font-size:12px; }
+.fichas{ display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:14px; }
+.ficha{ background:var(--blanco); border:1px solid var(--linea); border-radius:var(--radio); padding:14px 16px; cursor:pointer; aspect-ratio:1/0.82; display:flex; flex-direction:column; min-height:150px; position:relative; }
+.ficha:hover{ box-shadow:var(--sombra); }
+.ficha .top{ display:flex; justify-content:space-between; align-items:flex-start; color:var(--gris); }
+.ficha .num{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); }
+.ficha h3{ margin:auto 0 0; font-size:20px; font-weight:600; letter-spacing:-.01em; }
+.ficha .dato{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--grisClaro); margin-top:4px; }
+.ficha .lista{ gap:3px; margin-top:8px; } .ficha .lista div{ font-size:12px; line-height:1.3; display:flex; gap:6px; align-items:flex-start; overflow:hidden; } .ficha .lista i{ width:6px; height:6px; border-radius:3px; flex:0 0 auto; margin-top:5px; }
+.ficha.grande{ grid-column:span 2; aspect-ratio:auto; }
+/* espacios */
+.chips{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.chipEsp{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--lineaFuerte); border-radius:14px; padding:5px 11px; font-size:12px; background:var(--blanco); cursor:pointer; user-select:none; }
+.chipEsp.on{ border-color:var(--tinta); } .chipEsp.off{ opacity:.45; } .chipEsp i{ width:8px; height:8px; border-radius:4px; display:inline-block; }
+.chipEsp small{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); }
+.chipEsp.nuevo{ border-style:dashed; color:var(--grisClaro); }
+/* agenda */
+.agCab{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.agCab h2{ margin:0; font-size:30px; font-weight:600; letter-spacing:-.02em; line-height:1; } .agCab .sub{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--grisClaro); margin-bottom:4px; }
+.seg{ display:inline-flex; border:1px solid var(--tinta); border-radius:var(--radio); overflow:hidden; } .seg button{ border:0; background:var(--blanco); padding:7px 12px; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; } .seg button.on{ background:var(--tinta); color:var(--papel); }
+.banner{ background:var(--acentoClaro); border-radius:var(--radio); padding:8px 12px; font-size:13px; display:flex; gap:10px; align-items:center; margin-bottom:12px; } .banner .btn{ margin-left:auto; }
+.tableroDia{ display:grid; grid-template-columns:4fr 3fr 3fr 2fr; gap:18px; align-items:start; }
+.tableroSem{ display:grid; grid-template-columns:250px repeat(7,minmax(0,1fr)); gap:10px; align-items:start; }
+.colAg{ display:flex; flex-direction:column; gap:7px; min-height:calc(100vh - 330px); border-radius:8px; padding:8px 4px; min-width:0; }
+.colAg.pool{ background:var(--suave); padding:10px; }
+.colAg.finde{ background:#f6f5f2; } .colAg.sobre{ background:var(--acentoClaro); }
+.colAg .cabCol{ display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid var(--tinta); padding-bottom:6px; margin-bottom:3px; }
+.colAg .cabCol b{ font-size:16px; font-weight:600; } .colAg .cabCol span{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); }
+.colAg .cabCol.hoy{ border-color:var(--acento); } .colAg .cabCol.dim{ border-color:var(--lineaFuerte); }
+.colAg .cabCol .dnum{ display:inline-block; min-width:24px; height:24px; line-height:24px; text-align:center; border-radius:12px; } .colAg .cabCol.hoy .dnum{ background:var(--tinta); color:var(--papel); }
+.grp{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--grisClaro); margin-top:5px; } .grp i{ width:7px; height:7px; border-radius:4px; } .grp span{ margin-left:auto; }
+.pos{ background:var(--blanco); border:1px solid var(--linea); border-radius:var(--radio); padding:8px 10px 8px 13px; position:relative; overflow:hidden; cursor:grab; font-size:13px; line-height:1.3; }
+.pos:hover{ box-shadow:var(--sombra); } .pos::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--c,var(--lineaFuerte)); }
+.pos .m{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--grisClaro); margin-top:3px; display:flex; justify-content:space-between; gap:6px; }
+.pos.hecho{ background:var(--suave); } .pos.hecho .t{ text-decoration:line-through; color:var(--grisClaro); }
+.pos.disp{ opacity:.7; } .pos.band{ border-style:dashed; } .pos.movido .t{ color:var(--grisClaro); } .pos .rojo{ color:var(--rojo); }
+.pos.arrastrando{ opacity:.35; }
+.tableroSem .pos{ font-size:12px; padding:6px 8px 6px 11px; }
+.evt{ background:var(--tinta); color:var(--papel); border-radius:var(--radio); padding:8px 10px; font-size:13px; line-height:1.3; cursor:pointer; } .evt b{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:400; margin-right:6px; }
+.tableroSem .evt{ font-size:12px; padding:6px 8px; }
+.suelta{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; color:var(--grisClaro); padding:6px 2px; text-transform:uppercase; background:none; border:0; text-align:left; cursor:pointer; } .suelta:hover{ color:var(--tinta); }
+.huecoDrop{ border:1px dashed var(--lineaFuerte); border-radius:var(--radio); padding:12px 6px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; color:var(--lineaFuerte); }
+.resumenSem{ display:flex; gap:18px; flex-wrap:wrap; border-top:1px solid var(--linea); padding-top:10px; margin-top:14px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); letter-spacing:.06em; } .resumenSem span{ display:inline-flex; gap:5px; align-items:center; } .resumenSem i{ width:7px; height:7px; border-radius:4px; }
+.mes{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-left:1px solid var(--linea); border-top:1px solid var(--linea); }
+.mes .dn{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); text-transform:uppercase; padding:6px; border-right:1px solid var(--linea); border-bottom:1px solid var(--linea); background:var(--blanco); }
+.mes .d{ min-height:96px; padding:6px 8px; border-right:1px solid var(--linea); border-bottom:1px solid var(--linea); background:var(--blanco); cursor:pointer; display:flex; flex-direction:column; gap:4px; }
+.mes .d:hover{ background:var(--suave); } .mes .d.fuera{ background:transparent; color:var(--lineaFuerte); } .mes .d.hoy .n{ background:var(--tinta); color:var(--papel); border-radius:11px; padding:0 6px; }
+.mes .d .n{ font-family:'IBM Plex Mono',monospace; font-size:11px; align-self:flex-start; } .mes .d .r{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--gris); margin-top:auto; } .mes .d .ptos{ display:flex; gap:3px; flex-wrap:wrap; } .mes .d .ptos i{ width:7px; height:7px; border-radius:4px; }
+.menuPos{ position:absolute; background:var(--blanco); border:1px solid var(--linea); box-shadow:var(--sombra); z-index:45; border-radius:var(--radio); overflow:hidden; min-width:200px; display:flex; flex-direction:column; }
+.menuPos button{ border:0; background:none; text-align:left; padding:8px 12px; font-size:13px; cursor:pointer; } .menuPos button:hover{ background:var(--suave); }
+.menuPos .fila{ display:flex; gap:2px; padding:4px 8px 8px; } .menuPos .fila button{ padding:5px 6px; font-family:'IBM Plex Mono',monospace; font-size:10px; border:1px solid var(--linea); border-radius:4px; flex:1; text-align:center; }
+.menuPos .t{ font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--grisClaro); padding:8px 12px 2px; }
+/* bandeja por meses */
+.mesBand{ border:1px solid var(--linea); border-radius:var(--radio); background:var(--blanco); margin-top:8px; }
+.mesBand > summary{ list-style:none; padding:9px 12px; display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; font-weight:600; font-family:Figtree,sans-serif; text-transform:none; letter-spacing:0; color:var(--tinta); }
+.mesBand > summary::-webkit-details-marker{ display:none; } .mesBand > summary small{ font-family:'IBM Plex Mono',monospace; font-weight:400; font-size:10px; color:var(--grisClaro); }
+.mesBand > summary .btn{ margin-left:auto; } .mesBand .lista{ padding:0 10px 10px; }
+.bandeja .item .x{ border:0; background:none; color:var(--lineaFuerte); font-size:15px; cursor:pointer; padding:0 4px; } .bandeja .item .x:hover{ color:var(--rojo); }
+/* archivo */
+.archivo{ display:flex; flex-direction:column; gap:18px; } .archivo section h2{ margin:0 0 8px; font-size:18px; font-weight:600; display:flex; gap:8px; align-items:center; } .archivo section h2 i{ width:9px; height:9px; border-radius:5px; }
+.archItem{ background:var(--blanco); border:1px solid var(--linea); border-radius:var(--radio); padding:10px 12px; display:flex; gap:10px; align-items:center; margin-bottom:6px; } .archItem .tx{ flex:1; } .archItem .tx small{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--grisClaro); }
+.archivado{ background:var(--suave); border-radius:var(--radio); padding:8px 12px; font-size:13px; display:flex; gap:10px; align-items:center; }
+.espRow{ display:flex; gap:8px; align-items:center; } .espRow input[type=text]{ flex:1; } .espRow input[type=color]{ width:36px; height:32px; padding:2px; }
 /* ---------- móvil ---------- */
 .barraMovil{ display:none; } .ajMovil{ display:none; color:var(--grisClaro); align-self:flex-start; }
+@media (max-width:1100px) and (min-width:721px){
+  .p21 .arriba{ grid-template-columns:repeat(3,minmax(0,1fr)); } .p21 .arriba .cal{ grid-column:1/-1; } .colAt{ min-height:220px; }
+  .tableroSem{ grid-template-columns:repeat(4,minmax(0,1fr)); } .tableroSem .pool{ grid-column:1/-1; order:9; } .colAg{ min-height:160px; }
+  .tableroDia{ grid-template-columns:3fr 2fr 2fr 2fr; }
+}
 @media (max-width:720px){
   .wrap{ padding:calc(14px + env(safe-area-inset-top)) 14px 110px; }
   .cab h1{ font-size:30px; } .cab .der{ display:none; } .ajMovil{ display:block; }
@@ -219,6 +303,10 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
   .barraMovil a{ text-decoration:none; color:var(--grisClaro); display:flex; flex-direction:column; align-items:center; gap:3px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.08em; position:relative; }
   .barraMovil a.on{ color:var(--tinta); } .barraMovil a .cnt{ position:absolute; top:-4px; right:14px; background:var(--acento); color:var(--tinta); border-radius:10px; padding:0 5px; font-size:9px; }
   .chat,.panel{ width:100%; }
+  .p21 .arriba{ grid-template-columns:repeat(3,minmax(0,1fr)); } .p21 .arriba .cal{ grid-column:1/-1; } .colAt{ min-height:0; } .colAt .it{ display:none; } .colAt .num{ margin:0; }
+  .fichas{ grid-template-columns:repeat(2,minmax(0,1fr)); } .ficha.grande{ grid-column:span 2; }
+  .tableroDia,.tableroSem{ grid-template-columns:1fr; } .colAg{ min-height:0; } .tableroDia .pool{ order:9; } .tableroSem .pool{ order:9; }
+  .mes .d{ min-height:56px; padding:4px; } .mes .d .r{ font-size:9px; }
 }
 </style>
 </head>
@@ -230,17 +318,23 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
       <h1 id="titulo">La raíz</h1>
       <div class="lema" id="lema"></div>
     </div>
-    <a href="#" data-ir="ajustes" class="ajMovil" aria-label="Ajustes" title="Ajustes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a><div class="der"><div><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div><div id="txtActualizado">—</div><div id="txtVersion">v2.0</div></div>
+    <a href="#" data-ir="ajustes" class="ajMovil" aria-label="Ajustes" title="Ajustes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a><div class="der"><div><span class="pto" id="ptoDatos"></span><span id="txtDatos">sin datos</span></div><div id="txtActualizado">—</div><div id="txtVersion">v2.1</div></div>
   </div>
+  <div class="avisoGlobal" id="avisoGlobal"></div>
   <div class="nav" id="navTop">
-    <a href="#" data-ir="inicio">Inicio</a><a href="#" data-ir="arbol">Árbol</a><a href="#" data-ir="bandeja">Bandeja <span id="navPend"></span></a><a href="#" data-ir="calendario">Calendario</a><a href="#" data-ir="revision">Revisión</a><a href="#" data-ir="ajustes">Ajustes</a>
+    <a href="#" data-ir="inicio">Inicio</a><a href="#" data-ir="hoy">Hoy</a><a href="#" data-ir="arbol">Árbol</a><a href="#" data-ir="bandeja">Bandeja <span id="navPend"></span></a><a href="#" data-ir="calendario">Calendario</a><a href="#" data-ir="revision">Revisión</a><a href="#" data-ir="archivo">Archivo</a><a href="#" data-ir="ajustes">Ajustes</a>
     <span class="sep"></span>
     <button class="claude" id="bChat"><span class="pt"></span>Claude</button>
   </div>
 
-  <section class="vista" id="vInicio"><div class="portada" id="portada"></div></section>
+  <section class="vista" id="vInicio"><div class="p21" id="portada"></div></section>
+
+  <section class="vista" id="vHoy"><div id="agenda"></div></section>
+
+  <section class="vista" id="vArchivo"><div class="archivo" id="archivo"></div></section>
 
   <section class="vista" id="vArbol">
+    <div class="chips" id="chipsArbol"></div>
     <div class="objetivo"><div class="copa" id="copa"></div><div class="tronco" id="tronco"></div></div>
     <div class="pestanas" id="pestanas"></div>
     <div id="arbol"></div>
@@ -251,8 +345,8 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
       <div class="captura"><input id="bandejaTxt" placeholder="Captura: una idea, una llamada, algo que mirar…" /><button id="bCapturar">Capturar</button></div>
       <div class="etq" style="margin:14px 0 8px">Pendientes</div>
       <div class="lista" id="bandejaLista"></div>
-      <details><summary>Algún día / quizá (<span id="nAlgun">0</span>)</summary><div class="lista" id="bandejaAlgunLista" style="margin-top:8px"></div></details>
-      <details><summary>Archivadas (<span id="nArch">0</span>)</summary><div class="lista" id="bandejaArchLista" style="margin-top:8px"></div></details>
+      <details style="margin-top:14px"><summary>Algún día / quizá (<span id="nAlgun">0</span>)</summary><div id="bandejaAlgunLista"></div></details>
+      <details style="margin-top:10px"><summary>Archivadas (<span id="nArch">0</span>)</summary><div id="bandejaArchLista"></div></details>
     </div>
   </section>
 
@@ -274,8 +368,14 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
         <div class="aviso">La clave se guarda en este navegador y se envía solo a api.anthropic.com. Cada dispositivo necesita la suya.</div>
       </div>
       <div class="tarjeta">
+        <h2>Espacios</h2>
+        <div class="aviso">Cada espacio es un frente de trabajo con su propio árbol: lo tuyo, un estudio, una sociedad… Nombre y color son tuyos.</div>
+        <div class="lista" id="ajEspacios"></div>
+        <div class="acciones"><button class="btn" id="bNuevoEspacio">+ Nuevo espacio</button></div>
+      </div>
+      <div class="tarjeta">
         <h2>Textos</h2>
-        <div class="aviso">Doble clic sobre el título, el lema, "Lo que toca" y los nombres de las láminas en la portada para cambiarlos.</div>
+        <div class="aviso">Doble clic sobre el título, el lema y los nombres de las fichas de la portada para cambiarlos.</div>
       </div>
     </div>
   </section>
@@ -285,7 +385,7 @@ input.edIn{ font:inherit; color:inherit; background:#fff; border:1px solid var(-
   <a href="#" data-ir="inicio"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 11l9-8 9 8v10H3z"/></svg>INICIO</a>
   <a href="#" data-ir="arbol"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="3" width="8" height="4"/><path d="M12 7v5M12 12l-7 8M12 12v8M12 12l7 8"/></svg>ÁRBOL</a>
   <a href="#" data-ir="bandeja"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 13l2-8h14l2 8v6H3z M3 13h5l1 2h6l1-2h5"/></svg>BANDEJA<span class="cnt" id="cntMovil" style="display:none"></span></a>
-  <a href="#" data-ir="calendario"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>CALEND.</a>
+  <a href="#" data-ir="hoy"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="5" height="16"/><rect x="10" y="4" width="5" height="11"/><rect x="17" y="4" width="4" height="7"/></svg>HOY</a>
   <a href="#" id="bChatMovil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>CLAUDE</a>
 </nav>
 
