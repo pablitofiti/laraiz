@@ -8,7 +8,7 @@
      con referencias "id de nodo" | "tarea:<id>" | "band:<id>".
    - tareas: tareas sueltas { id, titulo, espacio, creado, hecho, cerrado }.
    ============================================================ */
-const VERSION = "v2.1";
+const VERSION = "v2.2";
 const CFG = window.RAIZ_CONFIG || {};
 const RUTA_DROPBOX = CFG.rutaArchivo || "/00_APP TD/raiz.json";
 const LS_DATOS = "raiz.datos", LS_RT = "raiz.dbx.refresh", LS_VERIF = "raiz.dbx.verifier", LS_API = "raiz.api.key", LS_MODELO = "raiz.api.modelo", LS_CHAT = "raiz.chat", LS_ESP = "raiz.espacio";
@@ -90,7 +90,10 @@ function marcarHecho(id, silencioso){
   if(sig){ sig.estado = (n.tipo === "paso") ? "activo" : "disponible"; if(sig.estado === "activo") sig.activado = hoy(); if(!silencioso) toast((sig.estado === "activo" ? "Siguiente paso: " : "Desbloqueado: ") + sig.titulo); }
   return true;
 }
-function reabrir(id){ const n=nodo(id); if(!n) return; n.estado="activo"; delete n.cerrado; }
+function reabrir(id){ const n=nodo(id); if(!n) return; n.estado="activo"; delete n.cerrado;
+  // si al cerrarlo se desbloqueó el siguiente y aún no se ha tocado, vuelve a bloquearse (solo un activo por padre)
+  const hs = hijosVivos(n.padre); const i = hs.findIndex(h => h.id === id); const sig = hs[i+1];
+  if(sig && sig.estado === (n.tipo === "paso" ? "activo" : "disponible") && !sig.tocado && !(sig.notas||[]).length && !hijosVivos(sig.id).some(h => h.estado === "hecho")) sig.estado = "bloqueado"; }
 function nuevoHijo(padreId, titulo, extra){
   const p = nodo(padreId); if(!p) return null; const hs = hijosVivos(padreId);
   const tipo = p.tipo === "raiz" ? "cuadro" : (p.tipo === "objetivo" ? "raiz" : "paso");
@@ -160,7 +163,7 @@ function migrar(){
   return cambio;
 }
 
-/* ---------- bandeja ---------- */
+/* ---------- bandeja (modelo) ---------- */
 function capturar(texto, extra){ const b = Object.assign({ id: uid("b"), fecha: hoy(), texto, estado: "pendiente" }, extra||{}); datos.bandeja.unshift(b); return b; }
 function itemBandeja(id){ return datos.bandeja.find(b => b.id === id); }
 function procesar(id, accion, arg){
@@ -270,8 +273,8 @@ document.addEventListener("click", (e) => {
 function editable(el, valor, onOk){
   if(!el) return; el.classList.add("ed"); el.title = "Doble clic para editar";
   el.ondblclick = (e) => { clearTimeout(navT); e.stopPropagation(); e.preventDefault(); const inp = document.createElement("input"); inp.className = "edIn"; inp.value = valor; el.replaceWith(inp); inp.focus(); inp.select();
-    let fin = false; const ok = () => { if(fin) return; fin = true; onOk(inp.value.trim()); guardar(); render(); };
-    inp.onblur = ok; inp.onkeydown = (ev) => { if(ev.key==="Enter") ok(); if(ev.key==="Escape"){ fin = true; render(); } }; inp.onclick = (ev) => ev.stopPropagation(); };
+    let fin = false; const ok = () => { if(fin) return; fin = true; inp.replaceWith(el); onOk(inp.value.trim()); guardar(); render(); };
+    inp.onblur = ok; inp.onkeydown = (ev) => { if(ev.key==="Enter") ok(); if(ev.key==="Escape"){ fin = true; inp.replaceWith(el); render(); } }; inp.onclick = (ev) => ev.stopPropagation(); };
 }
 function avisoGlobal(){
   const a = $("#avisoGlobal"); let h = "";
@@ -379,8 +382,7 @@ function renderCalendario(){
   el.querySelectorAll("[data-dia]").forEach(d => d.onclick = () => { calDia = d.dataset.dia; abrirDia(calDia); renderCalendario(); });
 }
 function abrirDia(f){
-  selId = null; $("#panel").classList.add("open"); $("#velo").classList.add("open");
-  $("#pRuta").textContent = "calendario"; $("#pTitulo").textContent = mayus(fechaLarga(f));
+  selId = null; abrirFicha("calendario", mayus(fechaLarga(f)));
   const ms = marcasDelDia(f); const vivos = datos.nodos.filter(n => (n.tipo==="cuadro"||n.tipo==="paso") && n.estado !== "hecho" && vivo(n));
   let h = `<div class="lista">` + (ms.length ? ms.map(x => `<div class="paso" ${x.nodo?('data-abrir="'+x.nodo+'"'):''}><span class="marca ${x.cls}" style="white-space:normal;flex:1;padding:3px 8px;border-radius:4px">${esc(x.txt)}</span>${x.evento?('<span class="mini"><button data-xe="'+x.evento+'" title="Borrar anotación">✕</button></span>'):''}</div>`).join("") : '<div class="aviso">Nada ese día.</div>') + `</div>`;
   h += `<div class="acciones"><div class="campo" style="flex:1"><label class="etq">Anotar en este día</label><input id="evTxt" placeholder="Reunión, visita, entrega…" style="width:100%" /></div><div class="campo"><label class="etq">Hora</label><input id="evHora" type="time" /></div></div>`;
@@ -524,8 +526,7 @@ function instalarArrastreAgenda(el){
   });
 }
 function abrirTarea(id){
-  const t = tarea(id); if(!t) return; selId = null; $("#panel").classList.add("open"); $("#velo").classList.add("open");
-  $("#pRuta").textContent = "tarea suelta"; $("#pTitulo").textContent = t.titulo;
+  const t = tarea(id); if(!t) return; selId = null; abrirFicha("tarea suelta", t.titulo);
   $("#pCuerpo").innerHTML = `<div class="acciones"><button class="estrella ${t.importante?'on':''}" id="tImp" title="Importante">★</button><input id="tTit" value="${esc(t.titulo)}" style="flex:1" /></div>
     <div class="campo"><label class="etq">Espacio</label><select id="tEsp" style="width:100%">${espacios().map(e => `<option value="${e.id}" ${e.id===t.espacio?'selected':''}>${esc(e.nombre)}</option>`).join("")}</select></div>
     <div class="acciones"><button class="btn act" id="tOk">Guardar</button><button class="btn sec" id="tHecha">${t.hecho?'Reabrir':'Marcar hecha'}</button><button class="btn rojo" id="tDel" style="margin-left:auto">Eliminar</button></div>`;
@@ -600,40 +601,71 @@ function instalarArrastre(arbol){
 }
 
 /* ---------- panel de nodo ---------- */
-function abrir(id){ const n = nodo(id); if(!n) return; const e = espacioDe(id); if(e && e.id !== espacioSel && vista === "arbol") espacioSel = e.id; selId = id; $("#panel").classList.add("open"); $("#velo").classList.add("open"); renderPanel(); if(vista === "arbol") renderArbol(); }
-function cerrarPanel(){ selId = null; calDia = null; $("#panel").classList.remove("open"); $("#velo").classList.remove("open"); }
+function abrirFicha(ruta, titulo){ $("#panel").classList.add("open"); $("#velo").classList.add("open"); $("#pRuta").textContent = ruta; const t = $("#pTitulo"); t.textContent = titulo; t.classList.remove("ed"); t.ondblclick = null; t.title = ""; $("#pMenu").innerHTML = ""; $("#pCuerpo").scrollTop = 0; }
+function abrir(id){ const n = nodo(id); if(!n) return; const e = espacioDe(id); if(e && e.id !== espacioSel && vista === "arbol") espacioSel = e.id; selId = id; abrirFicha("", n.titulo); renderPanel(); if(vista === "arbol") renderArbol(); }
+function cerrarPanel(){ selId = null; calDia = null; $("#panel").classList.remove("open"); $("#velo").classList.remove("open"); document.querySelectorAll(".menuRaiz").forEach(m => m.remove()); }
 function renderPanel(){
   const n = nodo(selId); if(!n){ cerrarPanel(); return; }
-  const e = espacioDe(n.id); $("#pRuta").textContent = (e && espacios().length > 1 ? e.nombre + " › " : "") + ruta(n.padre).join(" › "); $("#pTitulo").textContent = n.titulo;
-  const hs = hijosVivos(n.id); const arch = archivadoEf(n);
+  const e = espacioDe(n.id); const arch = archivadoEf(n); const hs = hijosVivos(n.id); const hechos = hs.filter(x => x.estado === "hecho").length;
+  $("#pRuta").textContent = (e && espacios().length > 1 ? e.nombre + " › " : "") + ruta(n.padre).join(" › ") || (e ? e.nombre : "");
+  const tit = $("#pTitulo"); tit.textContent = n.titulo; editable(tit, n.titulo, v => { if(v) editar(n.id, "titulo", v); });
+  const pm = $("#pMenu"); pm.innerHTML = `<button class="mas" aria-label="Más" title="Más opciones">···</button>`;
+  pm.querySelector(".mas").onclick = (ev) => { ev.stopPropagation(); document.querySelectorAll(".menuRaiz").forEach(m => m.remove());
+    const m = document.createElement("div"); m.className = "menuRaiz";
+    const padres = n.tipo === "cuadro" ? todasRaices().filter(r => r.id !== n.padre) : n.tipo === "paso" ? datos.nodos.filter(x => x.tipo === "cuadro" && vivo(x) && x.id !== n.padre) : [];
+    m.innerHTML = `${n.estado === "hecho" ? '<button data-o="reabrir">Reabrir</button>' : ''}${n.tipo !== "raiz" && !arch ? '<button data-o="hoy">→ Pasar a la pizarra de hoy</button>' : ''}${padres.length ? '<button data-o="mover">' + (n.tipo === "paso" ? "Mover a otro cuadro…" : "Mover a otra raíz…") + '</button>' : ''}${(n.tipo === "raiz" || n.tipo === "cuadro") ? (n.archivado ? '<button data-o="restaurar">Restaurar del archivo</button>' : '<button data-o="archivar">Archivar</button>') : ''}<button data-o="del" class="rojo">Eliminar…</button>`;
+    const r = pm.getBoundingClientRect(); m.style.position = "fixed"; m.style.left = Math.max(8, r.right - 220) + "px"; m.style.top = (r.bottom + 4) + "px"; document.body.appendChild(m);
+    m.querySelectorAll("button").forEach(b => b.onclick = () => { const o = b.dataset.o; m.remove(); const snap = foto();
+      if(o === "reabrir"){ reabrir(n.id); guardar(); render(); }
+      if(o === "hoy"){ agendar(hoy(), n.id, "sinhora"); guardar(); render(); toast("En la pizarra de hoy", snap); }
+      if(o === "mover"){ const k = prompt("¿A cuál?\n" + padres.map((x,i) => (i+1) + ". " + (n.tipo === "paso" ? ruta(x.id).join(" › ") : x.titulo)).join("\n"), "1"); const d = padres[(+k||0)-1]; if(!d) return; moverA(n.id, d.id, 999); guardar(); render(); toast("Movido a " + d.titulo, snap); }
+      if(o === "archivar"){ archivar(n.id); guardar(); render(); toast("Archivado · está en Archivo", snap); }
+      if(o === "restaurar"){ restaurar(n.id); guardar(); render(); toast("Restaurado", snap); }
+      if(o === "del"){ if(eliminar(n.id)){ guardar(); render(); toast("Eliminado", snap); } } });
+    setTimeout(() => document.addEventListener("click", () => m.remove(), { once:true }), 0); };
   let h = arch ? `<div class="archivado">Archivado el ${fechaCorta(arch)}.${n.archivado ? '<button class="btn" data-a="restaurar" style="margin-left:auto">Restaurar</button>' : ''}</div>` : "";
-  h += `<div class="acciones"><button class="estrella ${n.importante?'on':''}" data-a="imp" title="Importante">★</button><span class="chip ${n.estado}">${n.estado}</span>${n.plazo?'<span class="chip">plazo '+fechaCorta(n.plazo)+'</span>':''}${n.cerrado?'<span class="chip hecho">hecho '+fechaCorta(n.cerrado)+'</span>':''}</div>`;
-  h += `<div class="acciones">${n.estado==='disponible'?'<button class="btn act" data-a="activar">Activar</button>':''}${n.estado==='activo'&&n.tipo!=='raiz'?'<button class="btn act" data-a="hecho">Marcar hecho</button>':''}${n.estado==='hecho'?'<button class="btn sec" data-a="reabrir">Reabrir</button>':''}${(n.tipo==='paso'||n.tipo==='cuadro')&&n.estado!=='hecho'&&!arch?'<button class="btn sec" data-a="hoyA" title="Añadir a la pizarra de hoy">→ Hoy</button>':''}${(n.tipo==='raiz'||n.tipo==='cuadro')&&!n.archivado?'<button class="btn sec" data-a="archivar">Archivar</button>':''}<button class="btn sec" data-a="subir">▲</button><button class="btn sec" data-a="bajar">▼</button><button class="btn rojo" data-a="eliminar" style="margin-left:auto">Eliminar</button></div>`;
-  h += `<div class="campo"><label class="etq">Título</label><input data-e="titulo" value="${esc(n.titulo)}" style="width:100%" /></div>`;
-  h += `<div class="campo"><label class="etq">Hecho cuando…</label><input data-e="hecho_cuando" value="${esc(n.hecho_cuando||'')}" placeholder="Criterio verificable" style="width:100%" /></div>`;
-  h += `<div class="acciones" style="gap:10px"><div class="campo" style="flex:1"><label class="etq">Inicio</label><input data-e="inicio" type="date" value="${n.inicio||''}" style="width:100%" /></div><div class="campo" style="flex:1"><label class="etq">Plazo</label><input data-e="plazo" type="date" value="${n.plazo||''}" style="width:100%" /></div></div>`;
-  h += `<div><div class="etq" style="margin-bottom:6px">${n.tipo==='raiz'?'Cuadros':'Pasos'} (${hs.filter(x=>x.estado==='hecho').length}/${hs.length})</div><div class="lista">`;
-  hs.forEach((p,i) => { h += `<div class="paso ${p.estado}" data-abrir="${p.id}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="t" style="flex:1">${esc(p.titulo)}</span><span class="mini"><button data-m="${p.id}|-1">▲</button><button data-m="${p.id}|1">▼</button><button data-x="${p.id}">✕</button></span></div>`; });
-  h += `</div>`;
-  if(n.estado === "activo" || n.tipo === "raiz") h += `<div class="acciones" style="margin-top:6px"><input id="nuevoPaso" placeholder="${n.tipo==='raiz'?'Nuevo cuadro…':'Nuevo paso…'}" style="flex:1" /><button class="btn" data-a="nuevoPaso">+</button></div>`; else h += `<div class="aviso">Solo un nodo activo se desglosa.</div>`;
-  h += `</div>`;
-  h += `<div><div class="etq" style="margin-bottom:6px">Notas</div><textarea id="nuevaNota" placeholder="Apunta y pulsa Guardar nota" style="width:100%;min-height:60px"></textarea><div class="acciones" style="margin-top:6px"><button class="btn" data-a="nota">Guardar nota</button></div><div class="lista" style="margin-top:8px">${(n.notas||[]).map(x => `<div class="nota"><div class="f">${x.fecha}</div>${esc(x.texto)}</div>`).join("")}</div></div>`;
+  const etiq = n.tipo === "raiz" ? "Cuadros" : "Pasos";
+  let main = `<div class="chipsF"><span class="chip ${n.estado}">${n.estado}</span>${n.importante ? '<span class="chip activo">★ importante</span>' : ''}${n.plazo ? '<span class="chip ' + (n.plazo < hoy() && n.estado !== "hecho" ? "vencido" : "") + '">plazo ' + fechaCorta(n.plazo) + '</span>' : ''}${n.inicio ? '<span class="chip">desde ' + fechaCorta(n.inicio) + '</span>' : ''}${n.cerrado ? '<span class="chip hecho">hecho ' + fechaCorta(n.cerrado) + '</span>' : ''}${n.hecho_cuando ? '<span class="chip" title="Hecho cuando…">✓ ' + esc(n.hecho_cuando) + '</span>' : ''}</div>`;
+  main += `<div><div class="cabPasos"><h4>${etiq}</h4><span>${hechos} de ${hs.length}</span></div>${hs.length ? `<div class="progreso" style="margin:8px 0 10px"><i style="width:${Math.round(100*hechos/Math.max(1,hs.length))}%"></i></div>` : '<div style="height:8px"></div>'}<div class="lista" id="listaPasos">`;
+  hs.forEach(p => { main += `<div class="paso ${p.estado}" data-abrir="${p.id}" draggable="true"><button class="check" data-check="${p.id}" title="${p.estado === 'hecho' ? 'Reabrir' : 'Marcar hecho'}" aria-label="Marcar hecho">✓</button><span class="t">${p.importante ? '<span style="color:#c9a227">★</span> ' : ''}${esc(p.titulo)}${p.plazo ? '<small class="mono" style="color:var(--grisClaro);font-size:10px;margin-left:8px">' + fechaCorta(p.plazo) + '</small>' : ''}</span><span class="asa" title="Arrastra para ordenar">⋮⋮</span><button class="x" data-x="${p.id}" title="Eliminar">✕</button></div>`; });
+  main += `</div>`;
+  if(n.estado === "activo" || n.tipo === "raiz" || hs.length) main += `<div class="acciones" style="margin-top:8px"><input id="nuevoPaso" placeholder="${n.tipo==='raiz'?'Nuevo cuadro… (Enter)':'Nuevo paso… (Enter)'}" style="flex:1" /><button class="btn" data-a="nuevoPaso">+</button></div>`; else main += `<div class="aviso" style="margin-top:6px">Actívalo para desglosarlo en pasos.</div>`;
+  main += `</div>`;
+  main += `<div><div class="cabPasos"><h4>Notas</h4><span>${(n.notas||[]).length}</span></div><textarea class="notaIn" id="nuevaNota" placeholder="Apunta algo y pulsa Enter (Mayús+Enter para salto de línea)" style="margin-top:8px"></textarea><div class="lista" style="margin-top:8px">${(n.notas||[]).map(x => `<div class="nota"><div class="f">${x.fecha}</div>${esc(x.texto)}</div>`).join("")}</div></div>`;
+  let lado = `<div class="bloque">`;
+  if(n.estado === "disponible") lado += `<button class="btn act" data-a="activar">Activar</button>`;
+  else if(n.estado === "activo" && n.tipo !== "raiz") lado += `<button class="btn act" data-a="hecho">Marcar hecho</button>`;
+  else if(n.estado === "hecho") lado += `<button class="btn sec" data-a="reabrir">Reabrir</button>`;
+  else if(n.estado === "bloqueado") lado += `<div class="aviso">Bloqueado: se abre al terminar el anterior.</div>`;
+  if((n.tipo === "paso" || n.tipo === "cuadro") && n.estado !== "hecho" && !arch) lado += `<button class="btn sec" data-a="hoyA">→ Hoy</button>`;
+  lado += `<button class="btn sec" data-a="imp">${n.importante ? "★ Quitar importante" : "☆ Marcar importante"}</button></div>`;
+  lado += `<div class="bloque"><div class="campo"><label class="etq">Plazo</label><input data-e="plazo" type="date" value="${n.plazo||''}" /></div><div class="campo"><label class="etq">Inicio</label><input data-e="inicio" type="date" value="${n.inicio||''}" /></div><div class="campo"><label class="etq">Hecho cuando…</label><input data-e="hecho_cuando" value="${esc(n.hecho_cuando||'')}" placeholder="Criterio verificable" /></div></div>`;
+  h += `<div class="fichaGrid"><div class="principal">${main}</div><div class="lado">${lado}</div></div>`;
   const c = $("#pCuerpo"); c.innerHTML = h;
   c.querySelectorAll("[data-a]").forEach(b => b.onclick = () => { const a = b.dataset.a; const snap = foto();
-    if(a==="imp") toggleImportante(n.id, false); if(a==="activar") activar(n.id); if(a==="hecho") marcarHecho(n.id); if(a==="reabrir") reabrir(n.id); if(a==="subir") mover(n.id,-1); if(a==="bajar") mover(n.id,1);
+    if(a==="imp") toggleImportante(n.id, false); if(a==="activar") activar(n.id); if(a==="hecho") marcarHecho(n.id); if(a==="reabrir") reabrir(n.id);
     if(a==="restaurar"){ restaurar(n.id); toast("Restaurado"); }
-    if(a==="archivar"){ archivar(n.id); guardar(); render(); toast("Archivado · está en Archivo", snap); return; }
     if(a==="hoyA"){ agendar(hoy(), n.id, "sinhora"); toast("En la pizarra de hoy", snap); }
-    if(a==="eliminar"){ if(eliminar(n.id)){ guardar(); render(); toast("Eliminado", snap); } return; }
-    if(a==="nota"){ const t=$("#nuevaNota").value.trim(); if(t) addNota(n.id, t); } if(a==="nuevoPaso"){ const t=$("#nuevoPaso").value.trim(); if(t) nuevoHijo(n.id, t); }
+    if(a==="nuevoPaso"){ const t=$("#nuevoPaso").value.trim(); if(!t) return; nuevoHijo(n.id, t); }
     guardar(); render(); });
+  const np = $("#nuevoPaso"); if(np) np.addEventListener("keydown", ev => { if(ev.key === "Enter"){ ev.preventDefault(); c.querySelector('[data-a="nuevoPaso"]').click(); } });
+  $("#nuevaNota").addEventListener("keydown", ev => { if(ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); const t = ev.target.value.trim(); if(!t) return; addNota(n.id, t); guardar(); render(); } });
   c.querySelectorAll("[data-e]").forEach(i => i.onchange = () => { editar(n.id, i.dataset.e, i.value.trim()); guardar(); render(); });
-  c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = (e) => { if(e.target.closest(".mini")) return; abrir(p.dataset.abrir); });
-  c.querySelectorAll("[data-m]").forEach(b => b.onclick = (e) => { e.stopPropagation(); const [id,d] = b.dataset.m.split("|"); mover(id, +d); guardar(); render(); });
+  c.querySelectorAll("[data-abrir]").forEach(p => p.onclick = (e) => { if(e.target.closest(".check,.x,.asa")) return; abrir(p.dataset.abrir); });
+  c.querySelectorAll("[data-check]").forEach(b => b.onclick = (e) => { e.stopPropagation(); const p = nodo(b.dataset.check); if(!p) return; const snap = foto();
+    if(p.estado === "hecho"){ reabrir(p.id); } else if(p.estado === "bloqueado"){ toast("Está bloqueado: termina antes el anterior"); return; } else { if(!marcarHecho(p.id)) return; }
+    guardar(); render(); if(p.estado === "hecho") toast("Hecho: " + p.titulo, snap); });
   c.querySelectorAll("[data-x]").forEach(b => b.onclick = (e) => { e.stopPropagation(); const snap = foto(); if(eliminar(b.dataset.x)){ guardar(); render(); toast("Eliminado", snap); } });
+  let dragP = null; const lp = $("#listaPasos");
+  lp.querySelectorAll(".paso").forEach(el => {
+    el.addEventListener("dragstart", (ev) => { dragP = el.dataset.abrir; el.classList.add("arrastrando"); ev.dataTransfer.effectAllowed = "move"; ev.dataTransfer.setData("text/plain", dragP); });
+    el.addEventListener("dragend", () => { dragP = null; lp.querySelectorAll(".arrastrando,.sobre-antes,.sobre-despues").forEach(x => x.classList.remove("arrastrando","sobre-antes","sobre-despues")); });
+    el.addEventListener("dragover", (ev) => { if(!dragP || dragP === el.dataset.abrir) return; ev.preventDefault(); const mitad = ev.clientY < el.getBoundingClientRect().top + el.offsetHeight/2; el.classList.toggle("sobre-antes", mitad); el.classList.toggle("sobre-despues", !mitad); });
+    el.addEventListener("dragleave", () => el.classList.remove("sobre-antes","sobre-despues"));
+    el.addEventListener("drop", (ev) => { if(!dragP) return; ev.preventDefault(); ev.stopPropagation(); const dest = nodo(el.dataset.abrir); const rest = hijos(dest.padre).filter(x => x.id !== dragP); let idx = rest.findIndex(x => x.id === dest.id); if(!el.classList.contains("sobre-antes")) idx += 1; moverA(dragP, dest.padre, idx); dragP = null; guardar(); render(); }); });
 }
 
-/* ---------- bandeja ---------- */
+/* ---------- bandeja (vista) ---------- */
 function porMeses(arr){
   const g = {}; for(const b of arr){ const k = (b.procesado || b.fecha || "").slice(0,7); (g[k] = g[k] || []).push(b); }
   return Object.keys(g).sort().reverse().map(k => ({ k, items: g[k] }));
@@ -654,8 +686,7 @@ function renderBandeja(){
     if(!confirm("¿Borrar las " + quitar.length + " entradas de este mes?")) return; const snap = foto(); for(const x of quitar) procesar(x.id, "borrar"); guardar(); render(); toast(quitar.length + " borradas", snap); });
 }
 function abrirBandeja(id){
-  const b = itemBandeja(id); if(!b) return; selId = null; $("#panel").classList.add("open"); $("#velo").classList.add("open");
-  $("#pRuta").textContent = "bandeja · " + fechaCorta(b.fecha) + (b.destino ? " · " + b.destino : ""); $("#pTitulo").textContent = b.texto;
+  const b = itemBandeja(id); if(!b) return; selId = null; abrirFicha("bandeja · " + fechaCorta(b.fecha) + (b.destino ? " · " + b.destino : ""), b.texto);
   const activos = datos.nodos.filter(n => n.tipo === "cuadro" && n.estado === "activo" && vivo(n)); const cuadros = datos.nodos.filter(n => (n.tipo === "cuadro" || n.tipo === "paso") && n.estado !== "hecho" && vivo(n)); const rs = todasRaices();
   const varios = espacios().length > 1;
   const etiqueta = (n) => { const e = espacioDe(n.id); return (varios && e ? e.nombre + " · " : "") + n.titulo; };
@@ -774,7 +805,10 @@ async function dbxSubir(txt){ const t = await dbxToken(); const r = await fetch(
 /* ============================================================
    CLAUDE DENTRO
    ============================================================ */
-let chatMsgs = []; try{ chatMsgs = JSON.parse(localStorage.getItem(LS_CHAT) || "[]"); }catch(e){ chatMsgs = []; }
+let chatMsgs = []; localStorage.removeItem(LS_CHAT); // 2.2: el chat empieza en limpio en cada arranque
+const NOMBRE_MODELO = { "claude-sonnet-5-5":"Sonnet 5.5", "claude-opus-5-5":"Opus 5.5", "claude-haiku-5-5":"Haiku 5.5" };
+const modeloActual = () => localStorage.getItem(LS_MODELO) || "claude-sonnet-5-5";
+const SUGERENCIAS = [["Planifícame el día de hoy", "Planifícame el día de hoy: reparte en mañana y tarde lo que más importa, respetando las citas fijas."],["Procesa la bandeja", "Procesa la bandeja: dime qué es cada cosa y dónde la meterías (paso, cuadro, tarea, calendario o algún día)."],["¿Qué me toca ahora?", "¿Qué me toca ahora mismo? Mira lo activo, lo vencido y lo importante y dime por dónde empiezo."],["Hagamos la revisión semanal", "Hagamos la revisión semanal: repasa conmigo lo hecho, lo parado y los plazos, y cierra la revisión con una línea."]];
 let adjuntos = [];
 const SYSTEM = `Eres Claude dentro de "La raíz", la app de objetivos y planificación de Pablo Tejada Díaz (arquitecto en Málaga). Hablas en español, directo y breve, como un socio que organiza, no como un asistente genérico.
 
@@ -820,17 +854,19 @@ function abrirChat(){ $("#chat").classList.add("open"); renderChat(); if(!localS
 function cerrarChat(){ $("#chat").classList.remove("open"); }
 function sysMsg(t){ const m = $("#msgs"); const d = document.createElement("div"); d.className = "msg sys"; d.textContent = t; m.appendChild(d); m.scrollTop = m.scrollHeight; }
 function renderChat(){
-  const m = $("#msgs"); m.innerHTML = chatMsgs.length ? "" : '<div class="msg sys">Cuéntame qué quieres organizar. Puedo crear espacios, raíces, cuadros y pasos, procesar la bandeja, anotar citas, planificarte el día o la semana y hacer contigo la revisión. Antes de tocar nada te enseño los cambios.</div>';
-  for(const x of chatMsgs){ const d = document.createElement("div"); d.className = "msg " + (x.rol === "user" ? "yo" : "ia"); d.textContent = x.texto; if(x.adj && x.adj.length) d.innerHTML += '<span class="adj">📎 ' + x.adj.map(esc).join(", ") + '</span>'; m.appendChild(d); }
-  $("#modeloChat").value = localStorage.getItem(LS_MODELO) || "claude-sonnet-5-5"; renderAdjuntos(); m.scrollTop = m.scrollHeight;
+  const m = $("#msgs"); m.innerHTML = "";
+  if(!chatMsgs.length){ m.innerHTML = `<div class="sugerencias"><div class="etq">Para empezar</div>${SUGERENCIAS.map((x,i) => `<button data-sug="${i}"><i></i>${esc(x[0])}</button>`).join("")}<div class="msg sys" style="margin-top:6px">Claude ve tu árbol, tus pizarras, la bandeja y el calendario. Antes de tocar nada te enseña los cambios.</div></div>`; m.querySelectorAll("[data-sug]").forEach(b => b.onclick = () => { $("#chatTxt").value = SUGERENCIAS[+b.dataset.sug][1]; enviar(); }); }
+  for(const x of chatMsgs){ const d = document.createElement("div"); d.className = "msg " + (x.rol === "user" ? "yo" : "ia"); d.textContent = x.texto; if(x.adj && x.adj.length){ const a = document.createElement("span"); a.className = "adj"; a.innerHTML = x.adj.map(z => z.mini ? `<img src="${z.mini}" alt="${esc(z.nombre)}" />` : `<span>📎 ${esc(z.nombre)}</span>`).join(""); d.appendChild(a); } m.appendChild(d); }
+  $("#modeloChat").textContent = NOMBRE_MODELO[modeloActual()] || modeloActual(); renderAdjuntos(); m.scrollTop = m.scrollHeight;
 }
-function renderAdjuntos(){ $("#adjuntos").innerHTML = adjuntos.map((a,i) => `<span>${esc(a.nombre)}<b data-q="${i}">✕</b></span>`).join(""); $("#adjuntos").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { adjuntos.splice(+b.dataset.q,1); renderAdjuntos(); }); }
+function renderAdjuntos(){ $("#adjuntos").innerHTML = adjuntos.map((a,i) => `<span>${a.mini ? `<img src="${a.mini}" alt="" />` : ''}${esc(a.nombre)}<b data-q="${i}" title="Quitar">✕</b></span>`).join(""); $("#adjuntos").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { adjuntos.splice(+b.dataset.q,1); renderAdjuntos(); }); }
+async function adjuntar(files){ let n = 0; for(const f of files){ if(!f) continue; if(f.size > 20*1024*1024){ toast(f.name + " pesa más de 20 MB"); continue; } adjuntos.push(await leerAdjunto(f)); n++; } renderAdjuntos(); if(n) $("#chatTxt").focus(); return n; }
 async function leerAdjunto(f){
-  const nombre = f.name; const ext = nombre.split(".").pop().toLowerCase();
+  const nombre = f.name || ("imagen-" + new Date().toTimeString().slice(0,8).replace(/:/g,"") + ".png"); const ext = nombre.split(".").pop().toLowerCase();
   if(["txt","md","json","csv"].includes(ext)) return { nombre, tipo:"texto", texto: await f.text() };
   const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
   if(ext === "pdf") return { nombre, tipo:"pdf", b64 };
-  if(["png","jpg","jpeg","webp","gif"].includes(ext)) return { nombre, tipo:"imagen", media: f.type || "image/png", b64 };
+  if(["png","jpg","jpeg","webp","gif"].includes(ext) || (f.type||"").startsWith("image/")){ const media = f.type || "image/png"; return { nombre, tipo:"imagen", media, b64, mini: "data:" + media + ";base64," + b64 }; }
   return { nombre, tipo:"texto", texto: "(archivo " + nombre + " no soportado)" };
 }
 function planificarConClaude(m){
@@ -842,12 +878,12 @@ function planificarConClaude(m){
 async function enviar(){
   const key = localStorage.getItem(LS_API); if(!key){ sysMsg("Falta la clave de API: ponla en Ajustes → Claude."); return; }
   const txt = $("#chatTxt").value.trim(); if(!txt && !adjuntos.length) return;
-  const modelo = $("#modeloChat").value; localStorage.setItem(LS_MODELO, modelo);
+  const modelo = modeloActual();
   const contenido = [];
   for(const a of adjuntos){ if(a.tipo === "pdf") contenido.push({ type:"document", source:{ type:"base64", media_type:"application/pdf", data:a.b64 }, title:a.nombre }); else if(a.tipo === "imagen") contenido.push({ type:"image", source:{ type:"base64", media_type:a.media, data:a.b64 } }); else contenido.push({ type:"text", text:"Archivo " + a.nombre + ":\n" + a.texto.slice(0,60000) }); }
   contenido.push({ type:"text", text: txt || "(ver adjuntos)" });
-  chatMsgs.push({ rol:"user", texto: txt || "(adjuntos)", adj: adjuntos.map(a=>a.nombre), contenido }); adjuntos = []; $("#chatTxt").value = ""; renderChat();
-  const pens = document.createElement("div"); pens.className = "pensando"; pens.textContent = "pensando…"; $("#msgs").appendChild(pens); $("#bEnviar").disabled = true; $("#chatEstado").textContent = "";
+  chatMsgs.push({ rol:"user", texto: txt || "(adjuntos)", adj: adjuntos.map(a => ({ nombre:a.nombre, mini:a.mini })), contenido }); adjuntos = []; $("#chatTxt").value = ""; $("#chatTxt").style.height = ""; renderChat();
+  const pens = document.createElement("div"); pens.className = "pensando"; pens.textContent = "pensando…"; $("#msgs").appendChild(pens); $("#bEnviar").disabled = true;
   try{
     const historial = chatMsgs.slice(-12).map((x, i, arr) => ({ role: x.rol === "user" ? "user" : "assistant", content: (x.rol === "user" && x.contenido && i === arr.length-1) ? x.contenido : (x.rol === "user" ? x.texto : x.bruto || x.texto) }));
     const ult = historial[historial.length-1];
@@ -858,8 +894,7 @@ async function enviar(){
     const bruto = (j.content||[]).filter(c => c.type === "text").map(c => c.text).join("\n");
     let parsed = null; try{ parsed = JSON.parse(bruto); }catch(e){ const mm = bruto.match(/\{[\s\S]*\}/); if(mm){ try{ parsed = JSON.parse(mm[0]); }catch(e2){} } }
     const respuesta = parsed ? parsed.respuesta : bruto; const cambios = (parsed && Array.isArray(parsed.cambios)) ? parsed.cambios : [];
-    chatMsgs.push({ rol:"assistant", texto: respuesta, bruto }); if(chatMsgs.length > 40) chatMsgs = chatMsgs.slice(-40); localStorage.setItem(LS_CHAT, JSON.stringify(chatMsgs.map(x => ({ rol:x.rol, texto:x.texto, bruto:x.bruto, adj:x.adj }))));
-    if(j.usage) $("#chatEstado").textContent = (j.usage.input_tokens||0) + " → " + (j.usage.output_tokens||0) + " tokens";
+    chatMsgs.push({ rol:"assistant", texto: respuesta, bruto }); if(chatMsgs.length > 40) chatMsgs = chatMsgs.slice(-40);
     renderChat(); if(cambios.length) proponer(cambios);
   }catch(e){ console.error(e); sysMsg("Error: " + e.message); }
   finally{ pens.remove(); $("#bEnviar").disabled = false; }
@@ -924,8 +959,17 @@ function aplicar(cambios){
 /* ---------- arranque ---------- */
 $("#bChat").onclick = abrirChat; $("#bChatMovil").onclick = (e) => { e.preventDefault(); abrirChat(); }; $("#bCerrarChat").onclick = cerrarChat;
 $("#bEnviar").onclick = enviar; $("#chatTxt").addEventListener("keydown", e => { if(e.key==="Enter" && (e.ctrlKey || e.metaKey)) enviar(); });
-$("#chatFile").onchange = async (e) => { for(const f of e.target.files){ if(f.size > 20*1024*1024){ toast(f.name + " pesa más de 20 MB"); continue; } adjuntos.push(await leerAdjunto(f)); } e.target.value = ""; renderAdjuntos(); };
-$("#modeloChat").onchange = () => localStorage.setItem(LS_MODELO, $("#modeloChat").value);
+$("#chatFile").onchange = async (e) => { await adjuntar([...e.target.files]); e.target.value = ""; };
+// pegar imágenes y arrastrar archivos al chat
+document.addEventListener("paste", async (e) => { if(!$("#chat").classList.contains("open")) return; const files = [...(e.clipboardData && e.clipboardData.files || [])].filter(f => (f.type||"").startsWith("image/") || /\.(pdf|txt|md)$/i.test(f.name||"")); if(!files.length) return; e.preventDefault(); const n = await adjuntar(files); if(n) toast(n === 1 ? "Imagen adjuntada" : n + " archivos adjuntados"); });
+{ const ch = $("#chat"); let cnt = 0; const conArchivos = (e) => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
+  ch.addEventListener("dragenter", (e) => { if(!conArchivos(e)) return; e.preventDefault(); cnt++; ch.classList.add("dropOn"); });
+  ch.addEventListener("dragover", (e) => { if(!conArchivos(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+  ch.addEventListener("dragleave", () => { cnt = Math.max(0, cnt-1); if(!cnt) ch.classList.remove("dropOn"); });
+  ch.addEventListener("drop", async (e) => { if(!conArchivos(e)) return; e.preventDefault(); cnt = 0; ch.classList.remove("dropOn"); const n = await adjuntar([...e.dataTransfer.files]); if(n) toast(n === 1 ? "Archivo adjuntado" : n + " archivos adjuntados"); }); }
+$("#chatTxt").addEventListener("input", () => { const t = $("#chatTxt"); t.style.height = "auto"; t.style.height = Math.min(200, t.scrollHeight) + "px"; });
+$("#modelo").onchange = () => { localStorage.setItem(LS_MODELO, $("#modelo").value); };
+
 $("#bGuardarApi").onclick = () => { const k = $("#apiKey").value.trim(); if(k) localStorage.setItem(LS_API, k); else localStorage.removeItem(LS_API); localStorage.setItem(LS_MODELO, $("#modelo").value); toast(k ? "Clave guardada en este dispositivo" : "Clave borrada"); };
 $("#bVerApi").onclick = () => { const i = $("#apiKey"); i.type = i.type === "password" ? "text" : "password"; $("#bVerApi").textContent = i.type === "password" ? "Mostrar" : "Ocultar"; };
 $("#bCopiarApi").onclick = async () => { const k = localStorage.getItem(LS_API) || $("#apiKey").value; if(!k){ toast("No hay clave guardada"); return; } try{ await navigator.clipboard.writeText(k); toast("Clave copiada al portapapeles"); }catch(e){ $("#apiKey").type = "text"; $("#apiKey").select(); toast("Selecciónala y copia con Ctrl+C"); } };
@@ -934,10 +978,10 @@ $("#bArchivo").onclick = vincularArchivo; $("#bDescargar").onclick = descargar;
 $("#bDropbox").onclick = () => { if(localStorage.getItem(LS_RT)){ if(confirm("¿Desconectar Dropbox en este dispositivo?")){ localStorage.removeItem(LS_RT); location.reload(); } } else dbxConectar(); };
 $("#bRecargar").onclick = async () => { localStorage.removeItem(LS_DATOS); await cargarInicial(); if(datos && migrar()) guardar(); render(); };
 $("#bNuevoEspacio").onclick = () => { const n = prompt("Nombre del nuevo espacio (un trabajo, un proyecto grande, lo personal…)"); if(!n || !n.trim()) return; nuevoEspacio(n.trim()); guardar(); render(); };
-$("#bCerrar").onclick = () => { cerrarPanel(); render(); }; $("#velo").onclick = () => { cerrarPanel(); render(); };
+$("#bCerrar").onclick = () => { cerrarPanel(); render(); }; $("#velo").onclick = () => { cerrarPanel(); render(); }; $("#panel").addEventListener("click", (e) => { if(e.target === $("#panel")){ cerrarPanel(); render(); } });
 $("#bCapturar").onclick = () => { const t=$("#bandejaTxt").value.trim(); if(t){ capturar(t); $("#bandejaTxt").value=""; guardar(); render(); } };
 $("#bandejaTxt").addEventListener("keydown", e => { if(e.key==="Enter") $("#bCapturar").click(); });
-document.addEventListener("keydown", e => { if(e.key === "Escape"){ document.querySelectorAll(".menuPos,.menuRaiz").forEach(m => m.remove()); } });
+document.addEventListener("keydown", e => { if(e.key === "Escape"){ const menus = document.querySelectorAll(".menuPos,.menuRaiz"); if(menus.length){ menus.forEach(m => m.remove()); return; } if($("#chat").classList.contains("open")) cerrarChat(); else if($("#panel").classList.contains("open")){ cerrarPanel(); render(); } } });
 
 (async () => {
   const q = new URLSearchParams(location.search);

@@ -40,3 +40,8 @@ Todo vive en `raiz.json`. Claude puede leerlo y reescribirlo desde el chat con D
 - **Archivar**: en el menú ··· de una raíz o en el panel de un cuadro. Desaparece del árbol, de Hoy y de Claude, pero se conserva en **Archivo** con todos sus pasos y notas, y se puede restaurar.
 - **Bandeja**: ✕ para borrar sin abrir (con Deshacer). Algún día y Archivadas van agrupadas por meses, con "Vaciar mes".
 - **Aviso de Dropbox**: si un dispositivo no está conectado, sale una franja roja arriba. Al conectar, si ese dispositivo tenía cambios más nuevos que Dropbox, te pregunta cuál conservar.
+
+## Novedades 2.2
+- **Ficha de cuadro** tipo Trello, centrada y grande (en el móvil, a pantalla completa). Pasos con casilla para marcar hecho, barra de progreso, título editable con doble clic en la cabecera, nuevo paso y notas con Enter, pasos ordenables arrastrando. Archivar, mover y eliminar están en el menú ···. Esc o clic fuera la cierra.
+- **Chat de Claude** rediseñado: empieza en limpio cada vez que abres la app, con cuatro arranques rápidos (planificar el día, procesar la bandeja, qué toca, revisión semanal). Respuestas sin caja, tus mensajes en gris, caja de escribir grande con clip y flecha. El modelo se elige en Ajustes.
+- **Pegar y arrastrar**: Ctrl+V pega una captura o imagen en el chat; también puedes soltar imágenes o PDF sobre el panel.

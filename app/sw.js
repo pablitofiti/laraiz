@@ -2,7 +2,7 @@
    - index.html: red primero (las actualizaciones aparecen solas)
    - resto (fuentes, iconos): caché primero
    - Dropbox: nunca se cachea */
-const CACHE = "raiz-v30";
+const CACHE = "raiz-v31";
 const SHELL = ["./", "./index.html", "./config.js", "./app.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
